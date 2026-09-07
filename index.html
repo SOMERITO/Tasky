@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tasky - Pro Edition</title>
+    <style>
+        /* Variables Estilo Apple (iOS / macOS) */
+        :root {
+            --system-blue: #007AFF;
+            --system-blue-hover: #0056b3;
+            --system-red: #FF3B30;
+            --system-gray: #8E8E93;
+            --system-gray-light: #F2F2F7;
+            --whatsapp-green: #34C759; /* Verde iOS */
+            --whatsapp-hover: #2db34f;
+            --card-bg: rgba(255, 255, 255, 0.65); /* Translucidez para el cristal */
+            --text-main: #1C1C1E;
+            --text-muted: #8E8E93;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1); /* Curva de animación Apple */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent; /* Quita el cuadro azul al tocar en celulares */
+        }
+
+        /* FONDO DINÁMICO MULTICOLOR */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px 140px 20px;
+            
+            /* Gradiente de 6 colores premium estilo Wallpaper de macOS */
+            background: linear-gradient(-45deg, #FFB3BA, #FFDFBA, #BAFFC9, #BAE1FF, #E0C3FC, #FFC3A0);
+            background-size: 600% 600%;
+            animation: moveBackground 25s ease-in-out infinite;
+            background-attachment: fixed;
+        }
+
+        @keyframes moveBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 750px;
+        }
+
+        header {
+            margin-bottom: 40px;
+            text-align: center;
+            animation: slideDown 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(90deg, #007AFF, #5856D6, #FF2D55, #FF9500, #34C759, #007AFF);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientTitle 6s linear infinite;
+            letter-spacing: -1.5px;
+        }
+
+        @keyframes gradientTitle {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Tarjetas estilo Glassmorphism (Cristal) */
+        .activity-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 24px 30px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+            backdrop-filter: blur(25px) saturate(200%);
+            -webkit-backdrop-filter: blur(25px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transition: var(--transition);
+        }
+
+        .activity-card:hover {
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .activity-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            border: none;
+            padding: 4px 0;
+            width: 85%;
+            background: transparent;
+            outline: none;
+            letter-spacing: -0.5px;
+        }
+        
+        .activity-title::placeholder {
+            color: #C7C7CC;
+        }
+
+        /* Lista de tareas */
+        .task-list {
+            list-style: none;
+            counter-reset: task-counter;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: var(--transition);
+        }
+
+        .task-item:focus-within {
+            background: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transform: scale(1.01);
+        }
+
+        /* Checkbox iOS Style */
+        .btn-check {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid #C7C7CC;
+            background: transparent;
+            cursor: pointer;
+            margin-right: 14px;
+            transition: var(--transition);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .btn-check:hover {
+            border-color: var(--system-blue);
+        }
+
+        .task-item::before {
+            counter-increment: task-counter;
+            content: counter(task-counter);
+            font-weight: 600;
+            color: var(--system-blue);
+            width: 20px;
+            font-size: 1.05rem;
+            margin-right: 8px;
+            text-align: right;
+        }
+
+        .task-input {
+            flex-grow: 1;
+            border: none;
+            padding: 6px 4px;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            background: transparent;
+            outline: none;
+            width: 100%;
+        }
+
+        .task-input::placeholder {
+            color: #C7C7CC;
+        }
+
+        /* Etiqueta de Tarea Atrasada */
+        .badge-overdue {
+            font-size: 0.75rem;
+            color: var(--system-red);
+            background: rgba(255, 59, 48, 0.15);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            margin-right: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ======== TAREAS CUMPLIDAS ======== */
+        .completed-card {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px dashed rgba(0, 0, 0, 0.1);
+            box-shadow: none;
+        }
+
+        .completed-card .activity-title {
+            color: var(--system-gray);
+        }
+
+        .task-item.completed {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-radius: 0;
+            padding: 8px 10px;
+        }
+
+        .task-item.completed::before { content: none; }
+
+        .task-item.completed .task-input {
+            text-decoration: line-through;
+            color: var(--system-gray);
+        }
+
+        .task-item.completed .btn-check {
+            background: var(--system-blue);
+            border-color: var(--system-blue);
+        }
+
+        .task-item.completed .btn-check::after {
+            content: '';
+            position: absolute;
+            left: 7px; top: 4px;
+            width: 5px; height: 11px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        /* Botones e Iconos */
+        .btn-icon {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            color: #C7C7CC;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-remove-activity:hover {
+            color: var(--system-red);
+            background-color: rgba(255, 59, 48, 0.1);
+        }
+
+        .btn-remove-task {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .task-item:hover .btn-remove-task, 
+        .task-item:focus-within .btn-remove-task {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .btn-remove-task:hover {
+            color: var(--system-red);
+            background-color: rgba(255, 59, 48, 0.1);
+        }
+
+        /* Botón de Agregar Categoría */
+        .btn-add-activity {
+            background-color: rgba(255, 255, 255, 0.5);
+            color: var(--system-blue);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            width: 100%;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .btn-add-activity:hover {
+            background-color: rgba(255, 255, 255, 0.8);
+            transform: scale(1.02);
+        }
+
+        /* Botón FAB (WhatsApp) */
+        .fab-whatsapp {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background-color: var(--whatsapp-green);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 68px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(52, 199, 89, 0.4);
+            cursor: pointer;
+            transition: var(--transition);
+            z-index: 1000;
+        }
+
+        .fab-whatsapp:hover {
+            background-color: var(--whatsapp-hover);
+            transform: translateY(-5px) scale(1.05);
+        }
+
+        /* Drag Handle (Se oculta en móvil para simplificar, se usa en PC) */
+        .drag-handle {
+            cursor: grab;
+            color: #D1D5DB;
+            padding: 4px 6px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Toast Animado */
+        .toast {
+            position: fixed;
+            top: -80px; /* Sale desde arriba en iOS */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 30px;
+            font-size: 1.05rem;
+            font-weight: 500;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            transition: top 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast.show {
+            top: 40px;
+        }
+
+        svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2;
+        }
+
+        /* =========================================
+           RESPONSIVE DESIGN (ADAPTACIÓN A CELULARES)
+           ========================================= */
+        @media (max-width: 768px) {
+            body { padding: 20px 15px 120px 15px; }
+            h1 { font-size: 2.8rem; }
+            .activity-card { padding: 20px 15px; border-radius: 20px; }
+            .activity-title { font-size: 1.3rem; }
+            .task-input { font-size: 1rem; }
+            
+            /* En móvil, los botones de eliminar siempre deben verse porque no hay hover */
+            .btn-remove-task { opacity: 1; transform: scale(1); color: #C7C7CC; }
+            
+            /* Ocultar el drag handle en móvil para dejar más espacio para escribir */
+            .drag-handle { display: none; }
+            
+            .fab-whatsapp {
+                bottom: 25px; right: 25px;
+                width: 60px; height: 60px;
+            }
+            .toast { width: 90%; text-align: center; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Tasky</h1>
+        </header>
+        
+        <div id="activities-container">
+            <!-- Renderizado desde LocalStorage -->
+        </div>
+
+        <button class="btn-add-activity" onclick="addActivity('')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Añadir Lista
+        </button>
+
+        <div id="completed-container" class="activity-card completed-card" style="display: none;">
+            <div class="activity-header" style="margin-bottom: 8px;">
+                <h2 class="activity-title" readonly>Completadas</h2>
+            </div>
+            <div class="task-list" id="global-completed-list"></div>
+        </div>
+        
+        <button class="fab-whatsapp" onclick="copyToWhatsApp()" title="Copiar para WhatsApp">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+            </svg>
+        </button>
+    </div>
+
+    <div id="toast" class="toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#34C759"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        Lista copiada para WhatsApp
+    </div>
+
+    <script>
+        // ==========================================
+        // SISTEMA DE GUARDADO (PERSISTENCIA Y FECHAS)
+        // ==========================================
+        
+        // Escuchar CUALQUIER cambio en la página para autoguardar
+        document.addEventListener('input', () => saveData());
+        
+        // Cargar datos al abrir la app
+        window.onload = () => {
+            loadData();
+        };
+
+        function getTodayString() {
+            const date = new Date();
+            // Formato YYYY-MM-DD local
+            return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+        }
+
+        // Verifica si la fecha de creación es estrictamente anterior a HOY
+        function isOverdue(dateString) {
+            if (!dateString) return false;
+            const today = getTodayString();
+            return dateString < today; 
+        }
+
+        function saveData() {
+            const data = { categories: [], completed: [] };
+            
+            // Guardar categorías activas
+            document.querySelectorAll('.activity-card:not(.completed-card)').forEach(card => {
+                const title = card.querySelector('.activity-title').value;
+                const tasks = [];
+                
+                card.querySelectorAll('.task-item:not(.completed)').forEach(task => {
+                    const text = task.querySelector('.task-input').value;
+                    const date = task.dataset.date || getTodayString();
+                    // Solo guardamos las que tienen algo escrito para no llenar memoria de inputs vacíos
+                    if(text.trim() !== '') {
+                        tasks.push({ text, date });
+                    }
+                });
+                
+                // Siempre guardamos la categoría, incluso si está vacía, para que el usuario no pierda el título
+                data.categories.push({ title, tasks });
+            });
+
+            // Guardar completadas
+            document.querySelectorAll('.task-item.completed').forEach(task => {
+                const text = task.querySelector('.task-input').value;
+                const date = task.dataset.date || getTodayString();
+                if(text.trim() !== '') {
+                    data.completed.push({ text, date });
+                }
+            });
+
+            localStorage.setItem('tasky_pro_data', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const dataStr = localStorage.getItem('tasky_pro_data');
+            
+            if (dataStr) {
+                const data = JSON.parse(dataStr);
+                
+                // Cargar Categorías
+                if(data.categories && data.categories.length > 0) {
+                    data.categories.forEach(cat => {
+                        const card = addActivity(cat.title, false);
+                        const list = card.querySelector('.task-list');
+                        
+                        cat.tasks.forEach(task => {
+                            const input = createTaskElement(list, null, task.date);
+                            input.value = task.text;
+                        });
+                        // Siempre dejar un espacio vacío al final para escribir rápido
+                        createTaskElement(list, null, getTodayString());
+                    });
+                } else {
+                    addActivity('Mi Día', true);
+                }
+
+                // Cargar Completadas
+                if (data.completed && data.completed.length > 0) {
+                    const globalList = document.getElementById('global-completed-list');
+                    document.getElementById('completed-container').style.display = 'block';
+                    
+                    data.completed.forEach(task => {
+                        const input = createTaskElement(globalList, null, task.date);
+                        input.value = task.text;
+                        const taskItem = input.closest('.task-item');
+                        taskItem.classList.add('completed');
+                        taskItem.draggable = false;
+                    });
+                }
+            } else {
+                // Primera vez que entra el usuario
+                addActivity('Mi Día', true);
+            }
+        }
+
+        // ==========================================
+        // FUNCIONES DE INTERFAZ
+        // ==========================================
+        let activityCounter = 0;
+
+        function addActivity(title = '', createEmptyTask = true) {
+            activityCounter++;
+            const container = document.getElementById('activities-container');
+            const activityCard = document.createElement('div');
+            activityCard.className = 'activity-card';
+            activityCard.id = 'activity-' + activityCounter;
+            
+            activityCard.innerHTML = `
+                <div class="activity-header">
+                    <input type="text" class="activity-title" value="${title}" placeholder="Título de la lista...">
+                    <button class="btn-icon btn-remove-activity" onclick="this.parentElement.parentElement.remove(); saveData();" title="Eliminar lista">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="task-list"></div>
+            `;
+            
+            container.appendChild(activityCard);
+            
+            if(createEmptyTask) {
+                const list = activityCard.querySelector('.task-list');
+                createTaskElement(list, null, getTodayString());
+                if (title === '') activityCard.querySelector('.activity-title').focus();
+            }
+            
+            saveData();
+            return activityCard;
+        }
+
+        function createTaskElement(listContainer, insertAfterElement = null, dateString = null) {
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-item';
+            taskItem.draggable = true; 
+            
+            const actualDate = dateString || getTodayString();
+            taskItem.dataset.date = actualDate;
+            
+            // Lógica visual de "Atrasado"
+            const overdueHtml = isOverdue(actualDate) ? 
+                `<div class="badge-overdue"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Atrasada</div>` 
+                : '';
+
+            taskItem.innerHTML = `
+                <div class="drag-handle">
+                    <svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="18" x2="16" y2="18"></line>
+                    </svg>
+                </div>
+                <div class="btn-check" onclick="toggleComplete(this)" title="Marcar como cumplida"></div>
+                <input type="text" class="task-input" placeholder="Añadir tarea..." 
+                       onkeydown="handleEnterKey(event, this)" 
+                       onpaste="handlePaste(event, this)">
+                ${overdueHtml}
+                <button class="btn-icon btn-remove-task" tabindex="-1" onclick="checkIfEmptyAndRemove(this)" title="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            `;
+            
+            if (insertAfterElement) insertAfterElement.after(taskItem);
+            else listContainer.appendChild(taskItem);
+            
+            return taskItem.querySelector('.task-input');
+        }
+
+        // Multilínea al pegar
+        function handlePaste(event, inputElement) {
+            const pasteText = (event.clipboardData || window.clipboardData).getData('text');
+            if (pasteText.includes('\n')) {
+                event.preventDefault();
+                const lines = pasteText.split('\n').map(l => l.trim()).filter(l => l !== '');
+                if (lines.length === 0) return;
+
+                inputElement.value = lines[0];
+                let currentItem = inputElement.closest('.task-item');
+                const listContainer = currentItem.parentElement;
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const newInput = createTaskElement(listContainer, currentItem, getTodayString());
+                    newInput.value = lines[i];
+                    currentItem = newInput.closest('.task-item');
+                }
+                currentItem.querySelector('.task-input').focus();
+                saveData();
+            }
+        }
+
+        function toggleComplete(btn) {
+            const taskItem = btn.closest('.task-item');
+            const isCompleted = taskItem.classList.contains('completed');
+            const globalCompletedList = document.getElementById('global-completed-list');
+            const completedContainer = document.getElementById('completed-container');
+
+            taskItem.style.opacity = '0';
+            taskItem.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                if (!isCompleted) {
+                    taskItem.classList.add('completed');
+                    taskItem.draggable = false;
+                    taskItem.dataset.originId = taskItem.closest('.activity-card').id; 
+                    
+                    // Quitar la etiqueta de atrasado si existe, ya que ya se cumplió
+                    const overdueBadge = taskItem.querySelector('.badge-overdue');
+                    if(overdueBadge) overdueBadge.remove();
+
+                    globalCompletedList.appendChild(taskItem);
+                    completedContainer.style.display = 'block'; 
+                } else {
+                    taskItem.classList.remove('completed');
+                    taskItem.draggable = true;
+                    
+                    const originCard = document.getElementById(taskItem.dataset.originId);
+                    if (originCard) originCard.querySelector('.task-list').appendChild(taskItem);
+                    else {
+                        const firstActiveCard = document.querySelector('.activity-card:not(.completed-card)');
+                        if(firstActiveCard) firstActiveCard.querySelector('.task-list').appendChild(taskItem);
+                    }
+
+                    if(globalCompletedList.children.length === 0) {
+                        completedContainer.style.display = 'none';
+                    }
+                }
+                
+                taskItem.style.opacity = '1';
+                taskItem.style.transform = 'scale(1)';
+                saveData();
+            }, 250);
+        }
+
+        function checkIfEmptyAndRemove(btn) {
+            btn.parentElement.remove();
+            const globalList = document.getElementById('global-completed-list');
+            if (globalList.children.length === 0) document.getElementById('completed-container').style.display = 'none';
+            saveData();
+        }
+
+        function handleEnterKey(event, inputElement) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if(inputElement.closest('.task-item').classList.contains('completed')) return; 
+
+                const currentTaskItem = inputElement.closest('.task-item');
+                const listContainer = currentTaskItem.parentElement;
+                const newInput = createTaskElement(listContainer, currentTaskItem, getTodayString());
+                newInput.focus();
+                saveData();
+            }
+        }
+
+        // ==========================================
+        // EXPORTAR A WHATSAPP
+        // ==========================================
+        function copyToWhatsApp() {
+            const normalActivities = document.querySelectorAll('.activity-card:not(.completed-card)');
+            let whatsappText = '';
+
+            normalActivities.forEach(activity => {
+                const title = activity.querySelector('.activity-title').value.trim();
+                const taskInputs = activity.querySelectorAll('.task-item:not(.completed) .task-input');
+                
+                const validTasks = Array.from(taskInputs).map(i => i.value.trim()).filter(v => v !== '');
+
+                if (title !== '' && validTasks.length > 0) {
+                    whatsappText += `*${title}*\n`;
+                    validTasks.forEach((task, index) => {
+                        whatsappText += `${index + 1}. ${task}\n`;
+                    });
+                    whatsappText += `\n`; 
+                }
+            });
+
+            const completedTasks = document.querySelectorAll('.task-item.completed .task-input');
+            const validCompleted = Array.from(completedTasks).map(i => i.value.trim()).filter(v => v !== '');
+
+            if (validCompleted.length > 0) {
+                whatsappText += `*✅ Completadas*\n`;
+                validCompleted.forEach(task => { whatsappText += `~${task}~\n`; });
+                whatsappText += `\n`; 
+            }
+
+            if(whatsappText.trim() === '') {
+                alert('Escribe algunas tareas primero.');
+                return;
+            }
+
+            navigator.clipboard.writeText(whatsappText.trim()).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            }).catch(err => alert('Error al copiar: ' + err));
+        }
+    </script>
+</body>
+</html>
