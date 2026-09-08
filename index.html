@@ -3,8 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Tasky Versión 4.0 -->
-    <title>Tasky - Pro Edition v4.0</title>
+    <!-- ==========================================
+         TASKY - PRO EDITION 
+         Versión: 5.0
+         Actualizaciones: Drag & Drop avanzado, 
+         Split-View para Dashboard de análisis.
+         ========================================== -->
+    <title>Tasky</title>
+    
+    <!-- Motor de animaciones Drag & Drop profesional (SortableJS) -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
     <style>
         /* Variables Estilo Apple (iOS / macOS) */
         :root {
@@ -19,7 +28,7 @@
             --radius-lg: 24px;
             --radius-md: 16px;
             --radius-sm: 10px;
-            --transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+            --transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
             --bounce: cubic-bezier(0.34, 1.56, 0.64, 1); 
         }
 
@@ -37,22 +46,12 @@
             background-attachment: fixed;
         }
 
-        @keyframes moveBackground {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+        @keyframes moveBackground { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-        .container { width: 100%; max-width: 750px; }
+        /* Contenedor más ancho para soportar la vista dividida */
+        .container { width: 100%; max-width: 880px; }
 
-        header { margin-bottom: 30px; text-align: center; position: relative; }
-
-        .version-badge {
-            position: absolute; top: -15px; right: 50%; transform: translateX(50%);
-            background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 20px;
-            font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
-            backdrop-filter: blur(5px);
-        }
+        header { margin-bottom: 30px; text-align: center; }
 
         h1 {
             font-size: 3.8rem; font-weight: 800; margin: 0;
@@ -63,159 +62,128 @@
             letter-spacing: -1.5px;
         }
 
-        @keyframes gradientTitle {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
-        }
+        @keyframes gradientTitle { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
 
-        @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(25px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slideInTask {
-            from { opacity: 0; transform: translateX(-15px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* Tarjetas (Fases) */
+        /* ======== TARJETAS (FASES) ======== */
         .activity-card {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
-            padding: 24px 30px; margin-bottom: 24px;
+            padding: 24px; margin-bottom: 24px;
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
             backdrop-filter: blur(25px) saturate(200%);
             -webkit-backdrop-filter: blur(25px) saturate(200%);
             border: 1px solid rgba(255, 255, 255, 0.8);
-            transition: var(--transition);
-            animation: slideUpFade 0.6s var(--transition) both;
             position: relative;
-        }
-        
-        .activity-card.is-dragging { opacity: 0.5; box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: scale(1.02); }
-
-        .activity-header { margin-bottom: 15px; }
-        
-        .title-row {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 10px; gap: 10px;
+            animation: slideUpFade 0.6s var(--bounce) both;
         }
 
-        .card-drag-handle {
-            cursor: grab; color: var(--text-muted); padding: 5px;
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Estilos visuales del arrastre con SortableJS */
+        .sortable-ghost { opacity: 0.3; background: var(--system-gray); border-radius: var(--radius-md); }
+        .sortable-drag { cursor: grabbing !important; box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important; transform: scale(1.02); }
+
+        /* Botón Lateral Flotante para Análisis */
+        .btn-side-stats {
+            position: absolute; right: -18px; top: 50%; transform: translateY(-50%);
+            background: #FFFFFF; border: 1px solid rgba(0,0,0,0.1);
+            width: 40px; height: 40px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: pointer;
+            color: var(--system-blue); transition: var(--transition); z-index: 10;
         }
+        .btn-side-stats:hover { transform: translateY(-50%) scale(1.1); box-shadow: 0 6px 20px rgba(0,122,255,0.2); }
+        .btn-side-stats:active { transform: translateY(-50%) scale(0.9); }
+        
+        .activity-card.show-stats .btn-side-stats {
+            background: var(--system-blue); color: white; right: -12px;
+        }
+
+        /* Layout Interno Dividido (Split-View) */
+        .card-inner-layout { display: flex; transition: var(--transition); }
+        
+        .card-tasks-section { flex: 1; width: 100%; transition: var(--transition); }
+        
+        /* Panel de Análisis (Derecha) */
+        .card-stats-section {
+            width: 0; opacity: 0; overflow: hidden;
+            transition: width 0.4s var(--bounce), opacity 0.3s, margin 0.4s;
+            margin-left: 0; border-left: 1px solid transparent;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        
+        .activity-card.show-stats .card-stats-section {
+            width: 260px; opacity: 1;
+            margin-left: 20px; padding-left: 20px;
+            border-left: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .stats-content h3 { font-size: 1.1rem; color: var(--text-main); margin-bottom: 15px; text-align: center; }
+        .stats-grid { display: flex; justify-content: space-between; text-align: center; margin-bottom: 15px;}
+        .stat-box { display: flex; flex-direction: column; }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--system-blue); }
+        .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--system-gray); text-transform: uppercase; letter-spacing: 0.5px;}
+        .stat-msg { font-size: 0.95rem; font-weight: 500; color: var(--text-main); text-align: center; background: rgba(0,0,0,0.04); padding: 12px; border-radius: 12px; }
+
+        /* Cabecera de la sección de tareas */
+        .title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+        .card-drag-handle { cursor: grab; color: var(--text-muted); padding: 5px; display: flex; transition: var(--transition); }
         .card-drag-handle:active { cursor: grabbing; transform: scale(0.9); }
         .card-drag-handle:hover { color: var(--system-blue); }
+        .activity-title { flex-grow: 1; font-size: 1.4rem; font-weight: 700; color: var(--text-main); border: none; padding: 4px 0; background: transparent; outline: none; transition: var(--transition); }
 
-        .activity-title {
-            flex-grow: 1; font-size: 1.4rem; font-weight: 700; color: var(--text-main);
-            border: none; padding: 4px 0; background: transparent;
-            outline: none; letter-spacing: -0.5px; transition: var(--transition);
-        }
-        
-        .header-actions { display: flex; gap: 5px; }
-
-        /* DASHBOARD DE AVANCE (Stats Panel) */
-        .stats-panel {
-            background: rgba(255, 255, 255, 0.5); border-radius: var(--radius-md);
-            margin-bottom: 15px; border: 1px solid rgba(0,0,0,0.05);
-            max-height: 0; overflow: hidden; opacity: 0; 
-            transition: max-height 0.4s var(--bounce), opacity 0.3s, padding 0.4s;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        .stats-panel.open { max-height: 150px; opacity: 1; padding: 15px; }
-
-        .stats-grid { display: flex; justify-content: space-between; text-align: center; }
-        .stat-box { display: flex; flex-direction: column; }
-        .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--system-blue); }
-        .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--system-gray); text-transform: uppercase; letter-spacing: 0.5px;}
-        .stat-msg { font-size: 0.9rem; font-weight: 500; color: var(--system-gray); text-align: center; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; }
-
-        .progress-container {
-            display: flex; align-items: center; gap: 10px;
-            margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
+        .progress-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .progress-bar-bg { flex-grow: 1; height: 6px; background: rgba(0,0,0,0.08); border-radius: 10px; overflow: hidden; }
         .progress-bar-fill { height: 100%; width: 0%; background: var(--system-blue); border-radius: 10px; transition: width 0.6s var(--bounce); }
         .progress-text { font-size: 0.85rem; font-weight: 600; color: var(--system-gray); }
 
-        /* Lista de Tareas */
-        .task-list {
-            list-style: none; display: flex; flex-direction: column; gap: 8px; min-height: 20px;
-        }
+        /* ======== LISTA DE TAREAS ======== */
+        .task-list { list-style: none; display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
 
         .task-item {
             display: flex; align-items: flex-start;
             background: rgba(255, 255, 255, 0.8);
-            border-radius: var(--radius-md); padding: 12px 14px;
+            border-radius: var(--radius-md); padding: 12px 10px;
             border: 1px solid rgba(255, 255, 255, 0.5);
-            transition: var(--transition);
-            animation: slideInTask 0.4s var(--transition) both;
+            transition: border 0.3s, background 0.3s, box-shadow 0.3s;
             position: relative;
         }
-        .task-item.is-dragging { opacity: 0.3; transform: scale(0.98); }
 
-        .task-item.is-critical {
-            background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3);
-        }
+        .task-item.is-critical { background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3); }
         .task-item.is-critical .task-input { font-weight: 600; }
         .task-item:focus-within { background: #FFFFFF; box-shadow: 0 4px 15px rgba(0,0,0,0.06); transform: scale(1.01); }
 
-        .drag-handle {
-            cursor: grab; color: #D1D5DB; padding: 4px; margin-top: 2px;
-            transition: transform 0.2s var(--bounce), color 0.2s; display: flex;
-        }
+        .drag-handle { cursor: grab; color: #D1D5DB; padding: 4px; margin-top: 2px; transition: transform 0.2s var(--bounce), color 0.2s; display: flex; }
         .drag-handle:active { cursor: grabbing; transform: scale(0.8); }
         .task-item:hover .drag-handle { color: var(--system-gray); }
 
-        .btn-priority {
-            background: transparent; border: none; cursor: pointer;
-            font-size: 1.2rem; color: #D1D5DB; margin-right: 8px;
-            transition: transform 0.3s var(--bounce), color 0.3s; padding-top: 2px;
-        }
+        .btn-priority { background: transparent; border: none; cursor: pointer; font-size: 1.2rem; color: #D1D5DB; margin-right: 6px; transition: transform 0.3s var(--bounce), color 0.3s; padding-top: 2px; }
         .btn-priority:active { transform: scale(0.6); }
         .is-critical .btn-priority { color: var(--system-red); transform: scale(1.1); }
 
-        .btn-check {
-            width: 26px; height: 26px; border-radius: 50%;
-            border: 2px solid #C7C7CC; background: transparent; cursor: pointer;
-            margin-right: 12px; flex-shrink: 0; margin-top: 2px;
-            transition: transform 0.3s var(--bounce), border-color 0.2s, background 0.2s;
-        }
+        .btn-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #C7C7CC; background: transparent; cursor: pointer; margin-right: 12px; flex-shrink: 0; margin-top: 2px; transition: transform 0.3s var(--bounce), border-color 0.2s, background 0.2s; }
         .btn-check:hover { border-color: var(--system-blue); }
         .btn-check:active { transform: scale(0.7); }
 
-        .task-input {
-            flex-grow: 1; border: none; padding: 4px; font-size: 1.05rem; color: var(--text-main);
-            background: transparent; outline: none; width: 100%; resize: none; overflow: hidden;
-            font-family: inherit; line-height: 1.4;
-        }
+        .task-input { flex-grow: 1; border: none; padding: 4px; font-size: 1.05rem; color: var(--text-main); background: transparent; outline: none; width: 100%; resize: none; overflow: hidden; font-family: inherit; line-height: 1.4; }
         .task-input::placeholder { color: #C7C7CC; }
 
         /* ======== COMPLETADAS ======== */
         .completed-card { background: rgba(255,255,255,0.4); border: 1px dashed rgba(0,0,0,0.1); }
-        .task-item.completed { background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0; animation: none; }
+        .completed-card .btn-side-stats { display: none; } /* Ocultar botón de análisis en completadas */
+        .task-item.completed { background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0; }
         .task-item.completed .task-input { text-decoration: line-through; color: var(--system-gray); font-weight: normal;}
         .task-item.completed .drag-handle, .task-item.completed .btn-priority { display: none; }
         .task-item.completed .btn-check { background: var(--system-blue); border-color: var(--system-blue); position: relative; }
-        .task-item.completed .btn-check::after {
-            content: ''; position: absolute; left: 7px; top: 4px; width: 5px; height: 11px;
-            border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg);
-        }
+        .task-item.completed .btn-check::after { content: ''; position: absolute; left: 7px; top: 4px; width: 5px; height: 11px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 
-        .btn-icon { 
-            background: transparent; border: none; cursor: pointer; padding: 6px; color: var(--system-gray);
-            transition: transform 0.2s var(--bounce), color 0.2s; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn-icon:hover { background: rgba(0,0,0,0.05); color: var(--system-blue); }
+        /* Botones Generales */
+        .btn-icon { background: transparent; border: none; cursor: pointer; padding: 6px; color: var(--system-gray); transition: transform 0.2s var(--bounce), color 0.2s; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .btn-icon:hover { background: rgba(0,0,0,0.05); color: var(--system-red); }
         .btn-icon:active { transform: scale(0.8); }
         
         .btn-remove-task { opacity: 0; transform: scale(0.8); }
         .task-item:hover .btn-remove-task, .task-item:focus-within .btn-remove-task { opacity: 1; transform: scale(1); }
-        .btn-remove-task:hover { color: var(--system-red); }
 
         .btn-add-activity {
             background: rgba(255, 255, 255, 0.5); color: var(--system-blue);
@@ -225,13 +193,12 @@
             transition: transform 0.3s var(--bounce), background 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .btn-add-activity:active { transform: scale(0.97); }
-        .btn-add-activity:hover { background: rgba(255, 255, 255, 0.8); }
+        .btn-add-activity:hover { background: rgba(255, 255, 255, 0.9); }
 
         .fab-whatsapp {
             position: fixed; bottom: 40px; right: 40px; background: var(--system-green); color: white;
             border: none; border-radius: 50%; width: 68px; height: 68px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 10px 25px rgba(52, 199, 89, 0.4); cursor: pointer; z-index: 1000;
-            transition: transform 0.3s var(--bounce), background 0.3s;
+            box-shadow: 0 10px 25px rgba(52, 199, 89, 0.4); cursor: pointer; z-index: 1000; transition: transform 0.3s var(--bounce), background 0.3s;
         }
         .fab-whatsapp:hover { transform: translateY(-5px) scale(1.08); }
         .fab-whatsapp:active { transform: scale(0.9); }
@@ -245,9 +212,22 @@
         }
         .toast.show { top: 40px; }
 
+        /* ======== RESPONSIVE ======== */
         @media (max-width: 768px) {
             body { padding: 20px 15px 120px 15px; }
             .activity-card { padding: 20px 15px; }
+            
+            /* En móvil, el análisis pasa abajo en lugar de a la derecha por falta de espacio */
+            .card-inner-layout { flex-direction: column; }
+            .activity-card.show-stats .card-stats-section {
+                width: 100%; margin-left: 0; padding-left: 0; border-left: none;
+                margin-top: 20px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 20px;
+            }
+            
+            /* Botón lateral se acomoda en móvil */
+            .btn-side-stats { right: 10px; top: 10px; transform: none; width: 35px; height: 35px; }
+            .btn-side-stats:hover, .btn-side-stats:active { transform: scale(0.95); }
+            
             .btn-remove-task { opacity: 1; transform: scale(1); }
             .fab-whatsapp { bottom: 25px; right: 25px; width: 60px; height: 60px; }
         }
@@ -257,7 +237,6 @@
 
     <div class="container">
         <header>
-            <div class="version-badge">v4.0</div>
             <h1>Tasky</h1>
         </header>
         
@@ -269,12 +248,14 @@
         </button>
 
         <div id="completed-container" class="activity-card completed-card" style="display: none;">
-            <div class="activity-header">
-                <div class="title-row">
-                    <h2 class="activity-title" readonly>✅ Completadas</h2>
+            <div class="card-inner-layout">
+                <div class="card-tasks-section">
+                    <div class="activity-header">
+                        <div class="title-row"><h2 class="activity-title" readonly>✅ Tareas Completadas</h2></div>
+                    </div>
+                    <div class="task-list" id="global-completed-list"></div>
                 </div>
             </div>
-            <div class="task-list" id="global-completed-list"></div>
         </div>
         
         <button class="fab-whatsapp" onclick="copyToWhatsApp()">
@@ -288,11 +269,14 @@
     </div>
 
     <script>
-        // ==========================================
-        // VARIABLES GLOBALES (DRAG & DROP)
-        // ==========================================
-        let draggedTask = null;
-        let draggedCard = null;
+        // Inicializar motor de arrastre para Secciones
+        let sortableCards = new Sortable(document.getElementById('activities-container'), {
+            animation: 350,
+            handle: '.card-drag-handle',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function() { saveData(); }
+        });
 
         document.addEventListener('input', (e) => {
             if(e.target.classList.contains('task-input')) {
@@ -302,24 +286,29 @@
             saveData();
         });
 
-        window.onload = () => { loadData(); setupContainerDrag(); };
+        window.onload = () => { loadData(); };
 
         function getTodayString() {
-            const d = new Date();
-            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+            const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
         }
 
         function autoResizeTextarea(el) {
-            el.style.height = 'auto';
-            el.style.height = (el.scrollHeight) + 'px';
+            el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px';
         }
 
         // ==========================================
-        // LÓGICA DE PROGRESO & DASHBOARD
+        // VISTA DIVIDIDA Y ANÁLISIS (SPLIT-VIEW)
         // ==========================================
         function toggleStats(btn) {
-            const panel = btn.closest('.activity-card').querySelector('.stats-panel');
-            panel.classList.toggle('open');
+            const card = btn.closest('.activity-card');
+            card.classList.toggle('show-stats');
+            
+            // Cambiar icono del botón
+            if(card.classList.contains('show-stats')) {
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+            } else {
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
+            }
         }
 
         function updateLogic() {
@@ -336,7 +325,6 @@
                 const completedCount = document.querySelectorAll(`.task-item.completed[data-origin-id="${cardId}"]`).length;
                 const total = pendingCount + completedCount;
 
-                // Actualizar Barra de Progreso
                 const progressText = card.querySelector('.progress-text');
                 const progressFill = card.querySelector('.progress-bar-fill');
                 if(progressText) progressText.innerText = `${completedCount}/${total}`;
@@ -344,20 +332,20 @@
                 let percent = total === 0 ? 0 : Math.round((completedCount / total) * 100);
                 if(progressFill) progressFill.style.width = `${percent}%`;
 
-                // Actualizar Dashboard (Widget)
-                const panel = card.querySelector('.stats-panel');
-                if (panel) {
-                    panel.querySelector('.stat-total').innerText = total;
-                    panel.querySelector('.stat-completed').innerText = completedCount;
-                    panel.querySelector('.stat-percent').innerText = `${percent}%`;
+                // Actualizar Textos del Dashboard Lateral
+                const statsSection = card.querySelector('.card-stats-section');
+                if (statsSection) {
+                    statsSection.querySelector('.stat-total').innerText = total;
+                    statsSection.querySelector('.stat-completed').innerText = completedCount;
+                    statsSection.querySelector('.stat-percent').innerText = `${percent}%`;
                     
-                    let msg = "Añade tareas para empezar.";
+                    let msg = "Añade tareas para iniciar.";
                     if(percent === 100 && total > 0) msg = "¡Fase completada! Excelente ritmo. 🚀";
                     else if (percent >= 50) msg = "¡Ya pasaste la mitad, sigue así! 🔥";
                     else if (percent > 0) msg = "Buen inicio, mantén el enfoque. 🎯";
                     else if (total > 0) msg = "¡Es hora de empezar con esta fase! 💪";
                     
-                    panel.querySelector('.stat-msg').innerText = msg;
+                    statsSection.querySelector('.stat-msg').innerText = msg;
                 }
             });
         }
@@ -388,42 +376,37 @@
                 const text = t.querySelector('.task-input').value;
                 if(text.trim() !== '') data.completed.push({ text, date: t.dataset.date, origin: t.dataset.originId });
             });
-            localStorage.setItem('tasky_pro_v4', JSON.stringify(data));
+            localStorage.setItem('tasky_pro_v5', JSON.stringify(data));
         }
 
         function loadData() {
-            const dataStr = localStorage.getItem('tasky_pro_v4');
+            const dataStr = localStorage.getItem('tasky_pro_v5');
             if (dataStr) {
                 const data = JSON.parse(dataStr);
                 if(data.categories && data.categories.length > 0) {
                     data.categories.forEach((cat, index) => {
-                        setTimeout(() => {
-                            const card = addActivity(cat.title, false, cat.id);
-                            const list = card.querySelector('.task-list');
-                            cat.tasks.forEach(task => {
-                                const input = createTaskElement(list, null, task.date);
-                                input.value = task.text;
-                                if(task.critical) input.closest('.task-item').classList.add('is-critical');
-                                setTimeout(()=> autoResizeTextarea(input), 0);
-                            });
-                            createTaskElement(list, null, getTodayString()); 
-                        }, index * 100); 
+                        const card = addActivity(cat.title, false, cat.id);
+                        const list = card.querySelector('.task-list');
+                        cat.tasks.forEach(task => {
+                            const input = createTaskElement(list, null, task.date);
+                            input.value = task.text;
+                            if(task.critical) input.closest('.task-item').classList.add('is-critical');
+                            setTimeout(()=> autoResizeTextarea(input), 0);
+                        });
+                        createTaskElement(list, null, getTodayString()); 
                     });
                 }
                 if (data.completed && data.completed.length > 0) {
-                    setTimeout(() => {
-                        const globalList = document.getElementById('global-completed-list');
-                        document.getElementById('completed-container').style.display = 'block';
-                        data.completed.forEach(task => {
-                            const input = createTaskElement(globalList, null, task.date);
-                            input.value = task.text;
-                            const taskItem = input.closest('.task-item');
-                            taskItem.classList.add('completed');
-                            taskItem.draggable = false;
-                            taskItem.dataset.originId = task.origin;
-                        });
-                        updateLogic();
-                    }, data.categories ? data.categories.length * 100 + 100 : 100);
+                    const globalList = document.getElementById('global-completed-list');
+                    document.getElementById('completed-container').style.display = 'block';
+                    data.completed.forEach(task => {
+                        const input = createTaskElement(globalList, null, task.date);
+                        input.value = task.text;
+                        const taskItem = input.closest('.task-item');
+                        taskItem.classList.add('completed');
+                        taskItem.dataset.originId = task.origin;
+                    });
+                    updateLogic();
                 }
             } else {
                 addActivity('☀️ Fase 1: Mañana / Casa');
@@ -438,51 +421,56 @@
             const card = document.createElement('div');
             card.className = 'activity-card'; 
             card.id = forceId || 'activity-' + activityCounter;
-            card.draggable = true; // Activa Drag & Drop para la Tarjeta
             
             card.innerHTML = `
-                <div class="activity-header">
-                    <div class="title-row">
-                        <div class="card-drag-handle" title="Mover Sección"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
-                        <input type="text" class="activity-title" value="${title}" placeholder="Fase o Bloque de tiempo...">
-                        <div class="header-actions">
-                            <button class="btn-icon" onclick="toggleStats(this)" title="Ver Avance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
-                            <button class="btn-icon" onclick="this.closest('.activity-card').remove(); updateLogic(); saveData();" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+                <button class="btn-side-stats" onclick="toggleStats(this)" title="Análisis">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </button>
+
+                <div class="card-inner-layout">
+                    <!-- IZQUIERDA: Tareas -->
+                    <div class="card-tasks-section">
+                        <div class="activity-header">
+                            <div class="title-row">
+                                <div class="card-drag-handle" title="Mover Sección"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
+                                <input type="text" class="activity-title" value="${title}" placeholder="Fase o Bloque de tiempo...">
+                                <button class="btn-icon" onclick="this.closest('.activity-card').remove(); updateLogic(); saveData();" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
+                                <span class="progress-text">0/0</span>
+                            </div>
                         </div>
+                        <div class="task-list"></div>
                     </div>
-                    <div class="stats-panel">
-                        <div class="stats-grid">
-                            <div class="stat-box"><span class="stat-value stat-total">0</span><span class="stat-label">Total</span></div>
-                            <div class="stat-box"><span class="stat-value stat-completed">0</span><span class="stat-label">Listas</span></div>
-                            <div class="stat-box"><span class="stat-value stat-percent">0%</span><span class="stat-label">Avance</span></div>
+
+                    <!-- DERECHA: Análisis -->
+                    <div class="card-stats-section">
+                        <div class="stats-content">
+                            <h3>Dashboard de Avance</h3>
+                            <div class="stats-grid">
+                                <div class="stat-box"><span class="stat-value stat-total">0</span><span class="stat-label">Total</span></div>
+                                <div class="stat-box"><span class="stat-value stat-completed">0</span><span class="stat-label">Listas</span></div>
+                                <div class="stat-box"><span class="stat-value stat-percent">0%</span><span class="stat-label">Avance</span></div>
+                            </div>
+                            <div class="stat-msg"></div>
                         </div>
-                        <div class="stat-msg"></div>
-                    </div>
-                    <div class="progress-container">
-                        <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
-                        <span class="progress-text">0/0</span>
                     </div>
                 </div>
-                <div class="task-list"></div>
             `;
             container.appendChild(card);
             
-            // Eventos Drag & Drop de Tarjeta
-            card.addEventListener('dragstart', function(e) {
-                if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') {
-                    e.preventDefault(); return; 
-                }
-                draggedCard = this;
-                setTimeout(() => this.classList.add('is-dragging'), 0);
-            });
-            card.addEventListener('dragend', function() {
-                this.classList.remove('is-dragging');
-                draggedCard = null;
-                saveData();
-            });
-
             const taskList = card.querySelector('.task-list');
-            setupTaskListDrag(taskList);
+            
+            // Inicializar motor de arrastre para las Subtareas de esta sección
+            new Sortable(taskList, {
+                group: 'shared-tasks', // Permite mover tareas entre distintas secciones
+                animation: 250,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: function() { updateLogic(); saveData(); }
+            });
 
             if(createEmptyTask) createTaskElement(taskList, null, getTodayString());
             updateLogic(); saveData();
@@ -492,7 +480,6 @@
         function createTaskElement(listContainer, insertAfter = null, dateStr = null) {
             const task = document.createElement('div');
             task.className = 'task-item';
-            task.draggable = true; // Activa Drag & Drop de Tarea
             task.dataset.date = dateStr || getTodayString();
 
             task.innerHTML = `
@@ -505,63 +492,10 @@
                 </button>
             `;
             
-            // Eventos Drag & Drop de Tarea (Evitando conflicto con la tarjeta)
-            task.addEventListener('dragstart', function(e) {
-                if(this.classList.contains('completed')) { e.preventDefault(); return; }
-                draggedTask = this;
-                e.stopPropagation(); // Evita que se mueva la tarjeta entera
-                setTimeout(() => this.classList.add('is-dragging'), 0);
-            });
-            task.addEventListener('dragend', function(e) {
-                this.classList.remove('is-dragging');
-                draggedTask = null;
-                e.stopPropagation();
-                updateLogic(); saveData();
-            });
-
             if (insertAfter) insertAfter.after(task);
             else listContainer.appendChild(task);
             return task.querySelector('.task-input');
         }
-
-        // ==========================================
-        // MOTOR DRAG & DROP (Mover entre Listas y Mover Secciones)
-        // ==========================================
-        function setupContainerDrag() {
-            const container = document.getElementById('activities-container');
-            container.addEventListener('dragover', e => {
-                e.preventDefault();
-                if (!draggedCard) return; // Solo actuar si movemos una tarjeta
-                const afterElement = getDragAfterElement(container, e.clientY, '.activity-card:not(.is-dragging)');
-                if (afterElement == null) container.appendChild(draggedCard);
-                else container.insertBefore(draggedCard, afterElement);
-            });
-        }
-
-        function setupTaskListDrag(list) {
-            list.addEventListener('dragover', e => {
-                e.preventDefault();
-                if (!draggedTask) return; // Solo actuar si movemos una tarea
-                const afterElement = getDragAfterElement(list, e.clientY, '.task-item:not(.is-dragging):not(.completed)');
-                if (afterElement == null) list.appendChild(draggedTask);
-                else list.insertBefore(draggedTask, afterElement);
-            });
-        }
-
-        // Función matemática para calcular dónde insertar (Sirve para tarjetas y tareas)
-        function getDragAfterElement(container, y, selector) {
-            const draggableElements = [...container.querySelectorAll(selector)];
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-        // ==========================================
 
         function handlePaste(event, input) {
             const text = (event.clipboardData || window.clipboardData).getData('text');
@@ -582,7 +516,7 @@
                             currentItem.querySelector('.task-input').focus();
                             updateLogic(); saveData();
                         }
-                    }, i * 50);
+                    }, i * 30);
                 }
             }
         }
@@ -599,13 +533,11 @@
             setTimeout(() => {
                 if (!isCompleted) {
                     taskItem.classList.add('completed');
-                    taskItem.draggable = false;
                     taskItem.dataset.originId = taskItem.closest('.activity-card').id; 
                     globalList.appendChild(taskItem);
                     container.style.display = 'block'; 
                 } else {
                     taskItem.classList.remove('completed');
-                    taskItem.draggable = true;
                     const originCard = document.getElementById(taskItem.dataset.originId);
                     if (originCard) originCard.querySelector('.task-list').appendChild(taskItem);
                     else {
