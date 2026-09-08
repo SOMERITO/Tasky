@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- ==========================================
          TASKY - PRO EDITION 
-         Versión: 5.0
-         Actualizaciones: Drag & Drop avanzado, 
-         Split-View para Dashboard de análisis.
+         Versión: 6.0
+         Actualizaciones: Línea de inserción azul (Drag),
+         Scroll inteligente al arrastrar, 
+         Análisis superior y nueva botonera flotante (+).
          ========================================== -->
     <title>Tasky</title>
     
@@ -48,8 +49,7 @@
 
         @keyframes moveBackground { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-        /* Contenedor más ancho para soportar la vista dividida */
-        .container { width: 100%; max-width: 880px; }
+        .container { width: 100%; max-width: 750px; }
 
         header { margin-bottom: 30px; text-align: center; }
 
@@ -68,7 +68,7 @@
         .activity-card {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
-            padding: 24px; margin-bottom: 24px;
+            padding: 24px 30px; margin-bottom: 24px;
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
             backdrop-filter: blur(25px) saturate(200%);
             -webkit-backdrop-filter: blur(25px) saturate(200%);
@@ -79,63 +79,61 @@
 
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Estilos visuales del arrastre con SortableJS */
-        .sortable-ghost { opacity: 0.3; background: var(--system-gray); border-radius: var(--radius-md); }
-        .sortable-drag { cursor: grabbing !important; box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important; transform: scale(1.02); }
-
-        /* Botón Lateral Flotante para Análisis */
-        .btn-side-stats {
-            position: absolute; right: -18px; top: 50%; transform: translateY(-50%);
-            background: #FFFFFF; border: 1px solid rgba(0,0,0,0.1);
-            width: 40px; height: 40px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: pointer;
-            color: var(--system-blue); transition: var(--transition); z-index: 10;
-        }
-        .btn-side-stats:hover { transform: translateY(-50%) scale(1.1); box-shadow: 0 6px 20px rgba(0,122,255,0.2); }
-        .btn-side-stats:active { transform: translateY(-50%) scale(0.9); }
+        /* Físicas Visuales Arrastre */
+        .sortable-ghost-card { opacity: 0.3; background: var(--system-gray); border-radius: var(--radius-lg); }
         
-        .activity-card.show-stats .btn-side-stats {
-            background: var(--system-blue); color: white; right: -12px;
+        /* LA LÍNEA AZUL PARA TAREAS */
+        .sortable-ghost-task {
+            height: 4px !important;
+            padding: 0 !important;
+            margin: 4px 0 !important;
+            background-color: var(--system-blue) !important;
+            border: none !important;
+            box-shadow: 0 0 10px var(--system-blue) !important;
+            border-radius: 4px !important;
+            overflow: hidden !important;
         }
-
-        /* Layout Interno Dividido (Split-View) */
-        .card-inner-layout { display: flex; transition: var(--transition); }
+        .sortable-ghost-task * { display: none !important; } /* Oculta el contenido para que se vea solo como línea */
         
-        .card-tasks-section { flex: 1; width: 100%; transition: var(--transition); }
-        
-        /* Panel de Análisis (Derecha) */
-        .card-stats-section {
-            width: 0; opacity: 0; overflow: hidden;
-            transition: width 0.4s var(--bounce), opacity 0.3s, margin 0.4s;
-            margin-left: 0; border-left: 1px solid transparent;
-            display: flex; flex-direction: column; justify-content: center;
-        }
-        
-        .activity-card.show-stats .card-stats-section {
-            width: 260px; opacity: 1;
-            margin-left: 20px; padding-left: 20px;
-            border-left: 1px solid rgba(0,0,0,0.1);
-        }
+        .sortable-drag { cursor: grabbing !important; box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important; transform: scale(1.02); opacity: 0.9; }
 
-        .stats-content h3 { font-size: 1.1rem; color: var(--text-main); margin-bottom: 15px; text-align: center; }
-        .stats-grid { display: flex; justify-content: space-between; text-align: center; margin-bottom: 15px;}
-        .stat-box { display: flex; flex-direction: column; }
-        .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--system-blue); }
-        .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--system-gray); text-transform: uppercase; letter-spacing: 0.5px;}
-        .stat-msg { font-size: 0.95rem; font-weight: 500; color: var(--text-main); text-align: center; background: rgba(0,0,0,0.04); padding: 12px; border-radius: 12px; }
-
-        /* Cabecera de la sección de tareas */
-        .title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+        /* Cabecera y acciones */
+        .title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+        
         .card-drag-handle { cursor: grab; color: var(--text-muted); padding: 5px; display: flex; transition: var(--transition); }
         .card-drag-handle:active { cursor: grabbing; transform: scale(0.9); }
         .card-drag-handle:hover { color: var(--system-blue); }
+        
         .activity-title { flex-grow: 1; font-size: 1.4rem; font-weight: 700; color: var(--text-main); border: none; padding: 4px 0; background: transparent; outline: none; transition: var(--transition); }
+
+        .header-actions { display: flex; gap: 5px; }
 
         .progress-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .progress-bar-bg { flex-grow: 1; height: 6px; background: rgba(0,0,0,0.08); border-radius: 10px; overflow: hidden; }
         .progress-bar-fill { height: 100%; width: 0%; background: var(--system-blue); border-radius: 10px; transition: width 0.6s var(--bounce); }
         .progress-text { font-size: 0.85rem; font-weight: 600; color: var(--system-gray); }
+
+        /* ======== PANEL DE ANÁLISIS (SUPERIOR) ======== */
+        .stats-panel {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: var(--radius-md);
+            max-height: 0; overflow: hidden; opacity: 0; 
+            margin-bottom: 0;
+            transition: max-height 0.4s var(--bounce), opacity 0.3s, margin 0.4s, padding 0.4s;
+            display: flex; flex-direction: column;
+        }
+        
+        .stats-panel.open {
+            max-height: 180px; opacity: 1; 
+            padding: 15px; margin-bottom: 15px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .stats-grid { display: flex; justify-content: space-between; text-align: center; margin-bottom: 12px; }
+        .stat-box { display: flex; flex-direction: column; width: 30%; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--system-blue); }
+        .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--system-gray); text-transform: uppercase; letter-spacing: 0.5px;}
+        .stat-msg { font-size: 0.95rem; font-weight: 500; color: var(--text-main); text-align: center; background: rgba(0,0,0,0.05); padding: 10px; border-radius: 10px; }
 
         /* ======== LISTA DE TAREAS ======== */
         .task-list { list-style: none; display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
@@ -170,7 +168,6 @@
 
         /* ======== COMPLETADAS ======== */
         .completed-card { background: rgba(255,255,255,0.4); border: 1px dashed rgba(0,0,0,0.1); }
-        .completed-card .btn-side-stats { display: none; } /* Ocultar botón de análisis en completadas */
         .task-item.completed { background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0; }
         .task-item.completed .task-input { text-decoration: line-through; color: var(--system-gray); font-weight: normal;}
         .task-item.completed .drag-handle, .task-item.completed .btn-priority { display: none; }
@@ -179,29 +176,34 @@
 
         /* Botones Generales */
         .btn-icon { background: transparent; border: none; cursor: pointer; padding: 6px; color: var(--system-gray); transition: transform 0.2s var(--bounce), color 0.2s; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .btn-icon:hover { background: rgba(0,0,0,0.05); color: var(--system-red); }
+        .btn-icon:hover { background: rgba(0,0,0,0.05); color: var(--system-blue); }
         .btn-icon:active { transform: scale(0.8); }
         
         .btn-remove-task { opacity: 0; transform: scale(0.8); }
         .task-item:hover .btn-remove-task, .task-item:focus-within .btn-remove-task { opacity: 1; transform: scale(1); }
+        .btn-remove-task:hover { color: var(--system-red); }
 
-        .btn-add-activity {
-            background: rgba(255, 255, 255, 0.5); color: var(--system-blue);
-            border: 1px solid rgba(255, 255, 255, 0.8); border-radius: var(--radius-lg);
-            padding: 16px; width: 100%; font-size: 1.15rem; font-weight: 600; cursor: pointer;
-            backdrop-filter: blur(10px); display: flex; justify-content: center; gap: 8px; margin-bottom: 30px;
-            transition: transform 0.3s var(--bounce), background 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        /* ======== BOTONES FLOTANTES (FABS) ======== */
+        .fab-container {
+            position: fixed;
+            bottom: 40px; right: 40px;
+            display: flex; gap: 15px;
+            z-index: 1000;
         }
-        .btn-add-activity:active { transform: scale(0.97); }
-        .btn-add-activity:hover { background: rgba(255, 255, 255, 0.9); }
 
-        .fab-whatsapp {
-            position: fixed; bottom: 40px; right: 40px; background: var(--system-green); color: white;
-            border: none; border-radius: 50%; width: 68px; height: 68px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 10px 25px rgba(52, 199, 89, 0.4); cursor: pointer; z-index: 1000; transition: transform 0.3s var(--bounce), background 0.3s;
+        .fab-btn {
+            border: none; border-radius: 50%; width: 68px; height: 68px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.3s var(--bounce), box-shadow 0.3s;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            color: white;
         }
-        .fab-whatsapp:hover { transform: translateY(-5px) scale(1.08); }
-        .fab-whatsapp:active { transform: scale(0.9); }
+        
+        .fab-btn:hover { transform: translateY(-5px) scale(1.08); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
+        .fab-btn:active { transform: scale(0.9); }
+
+        .fab-add { background: var(--system-blue); }
+        .fab-whatsapp { background: var(--system-green); }
 
         .toast {
             position: fixed; top: -80px; left: 50%; transform: translateX(-50%);
@@ -214,22 +216,12 @@
 
         /* ======== RESPONSIVE ======== */
         @media (max-width: 768px) {
-            body { padding: 20px 15px 120px 15px; }
+            body { padding: 20px 15px 140px 15px; }
             .activity-card { padding: 20px 15px; }
-            
-            /* En móvil, el análisis pasa abajo en lugar de a la derecha por falta de espacio */
-            .card-inner-layout { flex-direction: column; }
-            .activity-card.show-stats .card-stats-section {
-                width: 100%; margin-left: 0; padding-left: 0; border-left: none;
-                margin-top: 20px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 20px;
-            }
-            
-            /* Botón lateral se acomoda en móvil */
-            .btn-side-stats { right: 10px; top: 10px; transform: none; width: 35px; height: 35px; }
-            .btn-side-stats:hover, .btn-side-stats:active { transform: scale(0.95); }
-            
             .btn-remove-task { opacity: 1; transform: scale(1); }
-            .fab-whatsapp { bottom: 25px; right: 25px; width: 60px; height: 60px; }
+            
+            .fab-container { bottom: 25px; right: 25px; gap: 10px; }
+            .fab-btn { width: 55px; height: 55px; }
         }
     </style>
 </head>
@@ -242,39 +234,40 @@
         
         <div id="activities-container"></div>
 
-        <button class="btn-add-activity" onclick="addActivity('')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Añadir Nueva Fase
-        </button>
-
         <div id="completed-container" class="activity-card completed-card" style="display: none;">
-            <div class="card-inner-layout">
-                <div class="card-tasks-section">
-                    <div class="activity-header">
-                        <div class="title-row"><h2 class="activity-title" readonly>✅ Tareas Completadas</h2></div>
-                    </div>
-                    <div class="task-list" id="global-completed-list"></div>
-                </div>
+            <div class="activity-header">
+                <div class="title-row"><h2 class="activity-title" readonly>✅ Completadas</h2></div>
             </div>
+            <div class="task-list" id="global-completed-list"></div>
         </div>
         
-        <button class="fab-whatsapp" onclick="copyToWhatsApp()">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-        </button>
+        <!-- Botones Flotantes -->
+        <div class="fab-container">
+            <button class="fab-btn fab-add" onclick="addActivity('')" title="Nueva Sección">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <button class="fab-btn fab-whatsapp" onclick="copyToWhatsApp()" title="Copiar para WhatsApp">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            </button>
+        </div>
     </div>
 
     <div id="toast" class="toast">
         <svg viewBox="0 0 24 24" fill="none" stroke="#34C759" width="22" height="22" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-        Ruta copiada para WhatsApp
+        Copiado para WhatsApp
     </div>
 
     <script>
-        // Inicializar motor de arrastre para Secciones
+        // Inicializar motor de arrastre para Secciones (Con Scroll Rápido)
         let sortableCards = new Sortable(document.getElementById('activities-container'), {
             animation: 350,
             handle: '.card-drag-handle',
-            ghostClass: 'sortable-ghost',
+            ghostClass: 'sortable-ghost-card',
             dragClass: 'sortable-drag',
+            forceFallback: true, // Habilita el scroll inteligente y la animación de agarre
+            scroll: true,
+            scrollSensitivity: 120, // Pixeles de distancia al borde para iniciar scroll
+            scrollSpeed: 25, // Velocidad de scroll
             onEnd: function() { saveData(); }
         });
 
@@ -297,17 +290,17 @@
         }
 
         // ==========================================
-        // VISTA DIVIDIDA Y ANÁLISIS (SPLIT-VIEW)
+        // ANÁLISIS SUPERIOR 
         // ==========================================
         function toggleStats(btn) {
-            const card = btn.closest('.activity-card');
-            card.classList.toggle('show-stats');
+            const panel = btn.closest('.activity-card').querySelector('.stats-panel');
+            panel.classList.toggle('open');
             
-            // Cambiar icono del botón
-            if(card.classList.contains('show-stats')) {
-                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+            // Cambiar color del ícono si está abierto
+            if(panel.classList.contains('open')) {
+                btn.style.color = 'var(--system-blue)';
             } else {
-                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
+                btn.style.color = 'var(--system-gray)';
             }
         }
 
@@ -332,12 +325,12 @@
                 let percent = total === 0 ? 0 : Math.round((completedCount / total) * 100);
                 if(progressFill) progressFill.style.width = `${percent}%`;
 
-                // Actualizar Textos del Dashboard Lateral
-                const statsSection = card.querySelector('.card-stats-section');
-                if (statsSection) {
-                    statsSection.querySelector('.stat-total').innerText = total;
-                    statsSection.querySelector('.stat-completed').innerText = completedCount;
-                    statsSection.querySelector('.stat-percent').innerText = `${percent}%`;
+                // Actualizar Textos del Panel Superior
+                const statsPanel = card.querySelector('.stats-panel');
+                if (statsPanel) {
+                    statsPanel.querySelector('.stat-total').innerText = total;
+                    statsPanel.querySelector('.stat-completed').innerText = completedCount;
+                    statsPanel.querySelector('.stat-percent').innerText = `${percent}%`;
                     
                     let msg = "Añade tareas para iniciar.";
                     if(percent === 100 && total > 0) msg = "¡Fase completada! Excelente ritmo. 🚀";
@@ -345,7 +338,7 @@
                     else if (percent > 0) msg = "Buen inicio, mantén el enfoque. 🎯";
                     else if (total > 0) msg = "¡Es hora de empezar con esta fase! 💪";
                     
-                    statsSection.querySelector('.stat-msg').innerText = msg;
+                    statsPanel.querySelector('.stat-msg').innerText = msg;
                 }
             });
         }
@@ -376,11 +369,11 @@
                 const text = t.querySelector('.task-input').value;
                 if(text.trim() !== '') data.completed.push({ text, date: t.dataset.date, origin: t.dataset.originId });
             });
-            localStorage.setItem('tasky_pro_v5', JSON.stringify(data));
+            localStorage.setItem('tasky_pro_v6', JSON.stringify(data));
         }
 
         function loadData() {
-            const dataStr = localStorage.getItem('tasky_pro_v5');
+            const dataStr = localStorage.getItem('tasky_pro_v6');
             if (dataStr) {
                 const data = JSON.parse(dataStr);
                 if(data.categories && data.categories.length > 0) {
@@ -423,57 +416,58 @@
             card.id = forceId || 'activity-' + activityCounter;
             
             card.innerHTML = `
-                <button class="btn-side-stats" onclick="toggleStats(this)" title="Análisis">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                </button>
-
-                <div class="card-inner-layout">
-                    <!-- IZQUIERDA: Tareas -->
-                    <div class="card-tasks-section">
-                        <div class="activity-header">
-                            <div class="title-row">
-                                <div class="card-drag-handle" title="Mover Sección"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
-                                <input type="text" class="activity-title" value="${title}" placeholder="Fase o Bloque de tiempo...">
-                                <button class="btn-icon" onclick="this.closest('.activity-card').remove(); updateLogic(); saveData();" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
-                                <span class="progress-text">0/0</span>
-                            </div>
+                <div class="activity-header">
+                    <div class="title-row">
+                        <div class="card-drag-handle" title="Mover Sección"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
+                        <input type="text" class="activity-title" value="${title}" placeholder="Fase o Bloque de tiempo...">
+                        <div class="header-actions">
+                            <button class="btn-icon" onclick="toggleStats(this)" title="Ver Análisis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></button>
+                            <button class="btn-icon" onclick="this.closest('.activity-card').remove(); updateLogic(); saveData();" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
                         </div>
-                        <div class="task-list"></div>
+                    </div>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
+                        <span class="progress-text">0/0</span>
                     </div>
 
-                    <!-- DERECHA: Análisis -->
-                    <div class="card-stats-section">
-                        <div class="stats-content">
-                            <h3>Dashboard de Avance</h3>
-                            <div class="stats-grid">
-                                <div class="stat-box"><span class="stat-value stat-total">0</span><span class="stat-label">Total</span></div>
-                                <div class="stat-box"><span class="stat-value stat-completed">0</span><span class="stat-label">Listas</span></div>
-                                <div class="stat-box"><span class="stat-value stat-percent">0%</span><span class="stat-label">Avance</span></div>
-                            </div>
-                            <div class="stat-msg"></div>
+                    <div class="stats-panel">
+                        <div class="stats-grid">
+                            <div class="stat-box"><span class="stat-value stat-total">0</span><span class="stat-label">Total</span></div>
+                            <div class="stat-box"><span class="stat-value stat-completed">0</span><span class="stat-label">Listas</span></div>
+                            <div class="stat-box"><span class="stat-value stat-percent">0%</span><span class="stat-label">Avance</span></div>
                         </div>
+                        <div class="stat-msg"></div>
                     </div>
                 </div>
+                <div class="task-list"></div>
             `;
             container.appendChild(card);
             
             const taskList = card.querySelector('.task-list');
             
-            // Inicializar motor de arrastre para las Subtareas de esta sección
+            // Inicializar motor de arrastre para Subtareas (Con Scroll y Línea Azul)
             new Sortable(taskList, {
-                group: 'shared-tasks', // Permite mover tareas entre distintas secciones
+                group: 'shared-tasks', // Permite cruzar tareas entre secciones
                 animation: 250,
                 handle: '.drag-handle',
-                ghostClass: 'sortable-ghost',
+                ghostClass: 'sortable-ghost-task', // La clase que crea la línea azul
                 dragClass: 'sortable-drag',
+                forceFallback: true, // Vital para scroll y para clonar el elemento
+                scroll: true,
+                scrollSensitivity: 100,
+                scrollSpeed: 20,
                 onEnd: function() { updateLogic(); saveData(); }
             });
 
             if(createEmptyTask) createTaskElement(taskList, null, getTodayString());
             updateLogic(); saveData();
+            
+            // Hacer scroll automático a la nueva sección creada (suavizado)
+            if(title === '') {
+                setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            }
+            
             return card;
         }
 
@@ -488,7 +482,7 @@
                 <div class="btn-check" onclick="toggleComplete(this)"></div>
                 <textarea class="task-input" rows="1" placeholder="Añadir tarea..." onkeydown="handleEnter(event, this)" onpaste="handlePaste(event, this)"></textarea>
                 <button class="btn-icon btn-remove-task" tabindex="-1" onclick="this.parentElement.remove(); updateLogic(); saveData();">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             `;
             
