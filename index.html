@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- ==========================================
          TASKY - PRO EDITION 
-         Versión: 10.0
+         Versión: 11.0
          Actualizaciones: 
-         - Credenciales de JSONBin hardcodeadas.
-         - Sincronización 100% invisible y automática.
-         - Botón FAB gris convertido a "Forzar Sync".
-         - Eliminación de modales innecesarios.
+         - Motor de rescate de datos locales vs Nube Vacía.
+         - Empty State UI (Estado vacío profesional).
+         - Credenciales integradas.
          ========================================== -->
     <title>Tasky</title>
     
@@ -53,14 +52,13 @@
 
         header { margin-bottom: 30px; text-align: center; position: relative; }
 
-        /* Indicador de Nube (Sync Status) */
         .cloud-status {
             position: absolute; top: -15px; right: 50%; transform: translateX(50%);
             background: rgba(255, 255, 255, 0.5); padding: 6px 12px; border-radius: 20px;
             font-size: 0.85rem; font-weight: 700; color: var(--system-blue);
             backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05);
             display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            transition: var(--transition); cursor: pointer;
+            transition: var(--transition); cursor: pointer; z-index: 100;
         }
         .cloud-status:hover { transform: translateX(50%) scale(1.05); }
         .spin { animation: spin 1.5s linear infinite; }
@@ -75,6 +73,15 @@
         }
 
         @keyframes gradientTitle { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+
+        /* ======== ESTADO VACÍO (EMPTY STATE) ======== */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--system-gray);
+            animation: slideUpFade 0.6s var(--bounce) both;
+        }
+        .empty-state svg { opacity: 0.4; margin-bottom: 20px; }
+        .empty-state h3 { font-size: 1.5rem; margin-bottom: 10px; color: var(--text-main); font-weight: 700; letter-spacing: -0.5px;}
+        .empty-state p { font-size: 1.05rem; line-height: 1.5; }
 
         /* ======== TARJETAS (FASES) ======== */
         .activity-card {
@@ -195,10 +202,18 @@
         </header>
         
         <div id="activities-container">
-            <!-- Loader inicial -->
             <div id="loadingApp" style="text-align: center; color: var(--system-gray); margin-top: 50px;">
                 Cargando datos desde la nube... ☁️🔄
             </div>
+        </div>
+
+        <!-- Estado Vacío (Empty State) -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <h3>Todo limpio por aquí ✨</h3>
+            <p>Toca el botón azul inferior para crear tu primera fase.</p>
         </div>
 
         <div id="completed-container" class="activity-card completed-card" style="display: none;">
@@ -241,10 +256,8 @@
         const DEBOUNCE_DELAY = 2500;
 
         if (typeof Sortable !== 'undefined' && typeof Sortable.MultiDrag !== 'undefined') Sortable.mount(new Sortable.MultiDrag());
-
         let sortableCards;
 
-        // Auto-Resize e Inicialización
         document.addEventListener('input', (e) => {
             if(e.target.classList.contains('task-input')) { autoResizeTextarea(e.target); updateLogic(); }
             saveDataLocalAndCloud();
@@ -262,7 +275,7 @@
         function toggleFabMenu() { document.getElementById('fabMenu').classList.toggle('active'); }
 
         // ==========================================
-        // MOTOR CLOUD SYNC (JSONBin.io)
+        // MOTOR CLOUD SYNC & RESCATE DE DATOS
         // ==========================================
         function updateCloudUI(status) {
             const icon = document.getElementById('cloudIcon');
@@ -286,10 +299,29 @@
                 const response = await fetch(`${API_URL}${JSONBIN_ID}`, {
                     headers: { 'X-Master-Key': JSONBIN_KEY }
                 });
+                
                 if (response.ok) {
                     const json = await response.json();
-                    dataStr = JSON.stringify(json.record);
-                    localStorage.setItem('tasky_pro_v10', dataStr); // Update local cache
+                    let cloudData = json.record;
+
+                    // MOTOR DE RESCATE: Si la nube está literalmente vacía, buscamos en el historial del PC
+                    const isCloudEmpty = (!cloudData.categories || cloudData.categories.length === 0) && (!cloudData.completed || cloudData.completed.length === 0);
+                    
+                    if (isCloudEmpty) {
+                        let rescuedData = localStorage.getItem('tasky_pro_v10') || localStorage.getItem('tasky_pro_v9') || localStorage.getItem('tasky_pro_v8') || localStorage.getItem('tasky_pro_v7');
+                        
+                        if (rescuedData && rescuedData.length > 20) {
+                            showToast("Datos rescatados con éxito", true);
+                            dataStr = rescuedData;
+                            localStorage.setItem('tasky_pro_v11', dataStr);
+                            renderData(dataStr);
+                            saveDataLocalAndCloud(true); // Forzamos subida para poblar la nube vacía
+                            return; 
+                        }
+                    }
+
+                    dataStr = JSON.stringify(cloudData);
+                    localStorage.setItem('tasky_pro_v11', dataStr); 
                     updateCloudUI('online');
                 } else {
                     throw new Error('API Error');
@@ -297,7 +329,7 @@
             } catch (error) {
                 console.error("Error fetching Cloud:", error);
                 updateCloudUI('error');
-                dataStr = localStorage.getItem('tasky_pro_v10'); // Fallback local
+                dataStr = localStorage.getItem('tasky_pro_v11') || localStorage.getItem('tasky_pro_v10'); 
             }
 
             renderData(dataStr);
@@ -305,41 +337,43 @@
 
         function forceSync() {
             showToast("Forzando sincronización...", true);
-            saveDataLocalAndCloud(true); // Fuerza guardado instantáneo sin debounce
+            saveDataLocalAndCloud(true);
         }
 
         function renderData(dataStr) {
             document.getElementById('activities-container').innerHTML = '';
-            // Verificamos que traiga data real (mínimo el array de categorías)
+            let hasData = false;
+
             if (dataStr && dataStr.length > 20) {
-                const data = JSON.parse(dataStr);
-                if(data.categories && data.categories.length > 0) {
-                    data.categories.forEach((cat) => {
-                        const card = addActivity(cat.title, false, cat.id);
-                        const list = card.querySelector('.task-list');
-                        cat.tasks.forEach(task => {
-                            const input = createTaskElement(list, null, task.date);
-                            input.value = task.text;
-                            if(task.critical) input.closest('.task-item').classList.add('is-critical');
-                            setTimeout(()=> autoResizeTextarea(input), 0);
+                try {
+                    const data = JSON.parse(dataStr);
+                    if(data.categories && data.categories.length > 0) {
+                        hasData = true;
+                        data.categories.forEach((cat) => {
+                            const card = addActivity(cat.title, false, cat.id);
+                            const list = card.querySelector('.task-list');
+                            cat.tasks.forEach(task => {
+                                const input = createTaskElement(list, null, task.date);
+                                input.value = task.text;
+                                if(task.critical) input.closest('.task-item').classList.add('is-critical');
+                                setTimeout(()=> autoResizeTextarea(input), 0);
+                            });
+                            createTaskElement(list, null, getTodayString()); 
                         });
-                        createTaskElement(list, null, getTodayString()); 
-                    });
-                }
-                if (data.completed && data.completed.length > 0) {
-                    const globalList = document.getElementById('global-completed-list');
-                    document.getElementById('completed-container').style.display = 'block';
-                    data.completed.forEach(task => {
-                        const input = createTaskElement(globalList, null, task.date);
-                        input.value = task.text;
-                        const taskItem = input.closest('.task-item');
-                        taskItem.classList.add('completed');
-                        taskItem.dataset.originId = task.origin;
-                    });
-                }
-            } else {
-                addActivity('☀️ Fase 1: Mañana / Casa');
-                setTimeout(() => { addActivity('🏃 Fase 2: Ruta / Compras'); }, 150);
+                    }
+                    if (data.completed && data.completed.length > 0) {
+                        hasData = true;
+                        const globalList = document.getElementById('global-completed-list');
+                        document.getElementById('completed-container').style.display = 'block';
+                        data.completed.forEach(task => {
+                            const input = createTaskElement(globalList, null, task.date);
+                            input.value = task.text;
+                            const taskItem = input.closest('.task-item');
+                            taskItem.classList.add('completed');
+                            taskItem.dataset.originId = task.origin;
+                        });
+                    }
+                } catch(e) { console.error(e); }
             }
             
             updateLogic();
@@ -371,7 +405,7 @@
             });
             
             const dataStr = JSON.stringify(data);
-            localStorage.setItem('tasky_pro_v10', dataStr);
+            localStorage.setItem('tasky_pro_v11', dataStr);
 
             updateCloudUI('syncing');
             clearTimeout(cloudSyncTimer);
@@ -390,11 +424,8 @@
                 });
             };
 
-            if (instant) {
-                uploadTask();
-            } else {
-                cloudSyncTimer = setTimeout(uploadTask, DEBOUNCE_DELAY);
-            }
+            if (instant) uploadTask();
+            else cloudSyncTimer = setTimeout(uploadTask, DEBOUNCE_DELAY);
         }
 
         // ==========================================
@@ -408,6 +439,13 @@
         }
 
         function updateLogic() {
+            const container = document.getElementById('activities-container');
+            const emptyState = document.getElementById('empty-state');
+            const activeCards = container.querySelectorAll('.activity-card').length;
+            
+            if(activeCards === 0) emptyState.style.display = 'block';
+            else emptyState.style.display = 'none';
+
             document.querySelectorAll('.activity-card:not(.completed-card)').forEach(card => {
                 const tasks = card.querySelectorAll('.task-item:not(.completed)');
                 let pendingCount = 0;
@@ -531,7 +569,7 @@
                             currentItem.querySelector('.task-input').focus();
                             updateLogic(); saveDataLocalAndCloud();
                         }
-                    }, i * 30); // Carga en cascada
+                    }, i * 30);
                 }
             }
         }
