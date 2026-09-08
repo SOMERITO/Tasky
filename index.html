@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tasky - Pro Edition</title>
+    <!-- Tasky Versión 4.0 -->
+    <title>Tasky - Pro Edition v4.0</title>
     <style>
         /* Variables Estilo Apple (iOS / macOS) */
         :root {
             --system-blue: #007AFF;
             --system-red: #FF3B30;
             --system-orange: #FF9500;
+            --system-green: #34C759;
             --system-gray: #8E8E93;
-            --whatsapp-green: #34C759;
             --card-bg: rgba(255, 255, 255, 0.75);
             --text-main: #1C1C1E;
             --text-muted: #8E8E93;
@@ -19,14 +20,10 @@
             --radius-md: 16px;
             --radius-sm: 10px;
             --transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-            --bounce: cubic-bezier(0.34, 1.56, 0.64, 1); /* Efecto resorte Apple */
+            --bounce: cubic-bezier(0.34, 1.56, 0.64, 1); 
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0; padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
@@ -48,10 +45,17 @@
 
         .container { width: 100%; max-width: 750px; }
 
-        header { margin-bottom: 30px; text-align: center; }
+        header { margin-bottom: 30px; text-align: center; position: relative; }
+
+        .version-badge {
+            position: absolute; top: -15px; right: 50%; transform: translateX(50%);
+            background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
+            backdrop-filter: blur(5px);
+        }
 
         h1 {
-            font-size: 3.5rem; font-weight: 800; margin: 0;
+            font-size: 3.8rem; font-weight: 800; margin: 0;
             background: linear-gradient(90deg, #007AFF, #5856D6, #FF2D55, #FF9500, #34C759, #007AFF);
             background-size: 200% auto;
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -64,7 +68,6 @@
             100% { background-position: 200% center; }
         }
 
-        /* ANIMACIONES PROFESIONALES (Cards y Tasks) */
         @keyframes slideUpFade {
             from { opacity: 0; transform: translateY(25px); }
             to { opacity: 1; transform: translateY(0); }
@@ -85,164 +88,160 @@
             -webkit-backdrop-filter: blur(25px) saturate(200%);
             border: 1px solid rgba(255, 255, 255, 0.8);
             transition: var(--transition);
-            position: relative;
-            overflow: hidden;
             animation: slideUpFade 0.6s var(--transition) both;
+            position: relative;
         }
-
-        .activity-card:hover {
-            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
-        }
+        
+        .activity-card.is-dragging { opacity: 0.5; box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: scale(1.02); }
 
         .activity-header { margin-bottom: 15px; }
         
         .title-row {
             display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 10px; gap: 10px;
         }
 
+        .card-drag-handle {
+            cursor: grab; color: var(--text-muted); padding: 5px;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition);
+        }
+        .card-drag-handle:active { cursor: grabbing; transform: scale(0.9); }
+        .card-drag-handle:hover { color: var(--system-blue); }
+
         .activity-title {
-            font-size: 1.4rem; font-weight: 700; color: var(--text-main);
-            border: none; padding: 4px 0; width: 85%; background: transparent;
+            flex-grow: 1; font-size: 1.4rem; font-weight: 700; color: var(--text-main);
+            border: none; padding: 4px 0; background: transparent;
             outline: none; letter-spacing: -0.5px; transition: var(--transition);
         }
         
-        /* Barra de progreso Apple Style */
+        .header-actions { display: flex; gap: 5px; }
+
+        /* DASHBOARD DE AVANCE (Stats Panel) */
+        .stats-panel {
+            background: rgba(255, 255, 255, 0.5); border-radius: var(--radius-md);
+            margin-bottom: 15px; border: 1px solid rgba(0,0,0,0.05);
+            max-height: 0; overflow: hidden; opacity: 0; 
+            transition: max-height 0.4s var(--bounce), opacity 0.3s, padding 0.4s;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .stats-panel.open { max-height: 150px; opacity: 1; padding: 15px; }
+
+        .stats-grid { display: flex; justify-content: space-between; text-align: center; }
+        .stat-box { display: flex; flex-direction: column; }
+        .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--system-blue); }
+        .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--system-gray); text-transform: uppercase; letter-spacing: 0.5px;}
+        .stat-msg { font-size: 0.9rem; font-weight: 500; color: var(--system-gray); text-align: center; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; }
+
         .progress-container {
             display: flex; align-items: center; gap: 10px;
-            margin-bottom: 15px; padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-        
-        .progress-bar-bg {
-            flex-grow: 1; height: 6px; background: rgba(0,0,0,0.08);
-            border-radius: 10px; overflow: hidden;
-        }
-        
-        .progress-bar-fill {
-            height: 100%; width: 0%; background: var(--system-blue);
-            border-radius: 10px; transition: width 0.6s var(--bounce);
-        }
-        
+        .progress-bar-bg { flex-grow: 1; height: 6px; background: rgba(0,0,0,0.08); border-radius: 10px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; width: 0%; background: var(--system-blue); border-radius: 10px; transition: width 0.6s var(--bounce); }
         .progress-text { font-size: 0.85rem; font-weight: 600; color: var(--system-gray); }
 
         /* Lista de Tareas */
         .task-list {
-            list-style: none; counter-reset: task-counter;
-            display: flex; flex-direction: column; gap: 8px;
+            list-style: none; display: flex; flex-direction: column; gap: 8px; min-height: 20px;
         }
 
         .task-item {
             display: flex; align-items: flex-start;
             background: rgba(255, 255, 255, 0.8);
-            border-radius: var(--radius-md);
-            padding: 12px 14px;
+            border-radius: var(--radius-md); padding: 12px 14px;
             border: 1px solid rgba(255, 255, 255, 0.5);
             transition: var(--transition);
             animation: slideInTask 0.4s var(--transition) both;
+            position: relative;
         }
+        .task-item.is-dragging { opacity: 0.3; transform: scale(0.98); }
 
-        /* LÓGICA DE URGENCIA (CRÍTICO) */
         .task-item.is-critical {
-            background: rgba(255, 59, 48, 0.05);
-            border: 1px solid rgba(255, 59, 48, 0.3);
-            box-shadow: 0 4px 12px rgba(255, 59, 48, 0.1);
+            background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3);
         }
-        
         .task-item.is-critical .task-input { font-weight: 600; }
+        .task-item:focus-within { background: #FFFFFF; box-shadow: 0 4px 15px rgba(0,0,0,0.06); transform: scale(1.01); }
 
-        .task-item:focus-within {
-            background: #FFFFFF;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.06); transform: scale(1.01);
+        .drag-handle {
+            cursor: grab; color: #D1D5DB; padding: 4px; margin-top: 2px;
+            transition: transform 0.2s var(--bounce), color 0.2s; display: flex;
         }
+        .drag-handle:active { cursor: grabbing; transform: scale(0.8); }
+        .task-item:hover .drag-handle { color: var(--system-gray); }
 
-        /* Botón de urgencia (Con animación Bounce) */
         .btn-priority {
             background: transparent; border: none; cursor: pointer;
             font-size: 1.2rem; color: #D1D5DB; margin-right: 8px;
-            transition: transform 0.3s var(--bounce), color 0.3s;
-            padding-top: 2px;
+            transition: transform 0.3s var(--bounce), color 0.3s; padding-top: 2px;
         }
-        
         .btn-priority:active { transform: scale(0.6); }
         .is-critical .btn-priority { color: var(--system-red); transform: scale(1.1); }
 
-        /* Checkbox (Con animación Bounce) */
         .btn-check {
             width: 26px; height: 26px; border-radius: 50%;
             border: 2px solid #C7C7CC; background: transparent; cursor: pointer;
             margin-right: 12px; flex-shrink: 0; margin-top: 2px;
             transition: transform 0.3s var(--bounce), border-color 0.2s, background 0.2s;
         }
-        
         .btn-check:hover { border-color: var(--system-blue); }
-        .btn-check:active { transform: scale(0.7); } /* Efecto físico al tocar */
+        .btn-check:active { transform: scale(0.7); }
 
-        /* Multilínea (Textarea) */
         .task-input {
-            flex-grow: 1; border: none; padding: 4px;
-            font-size: 1.05rem; color: var(--text-main);
-            background: transparent; outline: none; width: 100%;
-            resize: none; overflow: hidden;
+            flex-grow: 1; border: none; padding: 4px; font-size: 1.05rem; color: var(--text-main);
+            background: transparent; outline: none; width: 100%; resize: none; overflow: hidden;
             font-family: inherit; line-height: 1.4;
         }
         .task-input::placeholder { color: #C7C7CC; }
 
         /* ======== COMPLETADAS ======== */
         .completed-card { background: rgba(255,255,255,0.4); border: 1px dashed rgba(0,0,0,0.1); }
-        .task-item.completed {
-            background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.05);
-            border-radius: 0; animation: none;
-        }
+        .task-item.completed { background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0; animation: none; }
         .task-item.completed .task-input { text-decoration: line-through; color: var(--system-gray); font-weight: normal;}
-        .task-item.completed .btn-priority { display: none; }
+        .task-item.completed .drag-handle, .task-item.completed .btn-priority { display: none; }
         .task-item.completed .btn-check { background: var(--system-blue); border-color: var(--system-blue); position: relative; }
         .task-item.completed .btn-check::after {
-            content: ''; position: absolute; left: 7px; top: 4px;
-            width: 5px; height: 11px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg);
+            content: ''; position: absolute; left: 7px; top: 4px; width: 5px; height: 11px;
+            border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg);
         }
 
-        /* Botones e Iconos */
         .btn-icon { 
-            background: transparent; border: none; cursor: pointer; padding: 8px; color: #C7C7CC;
-            transition: transform 0.2s var(--bounce), color 0.2s;
+            background: transparent; border: none; cursor: pointer; padding: 6px; color: var(--system-gray);
+            transition: transform 0.2s var(--bounce), color 0.2s; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
         }
+        .btn-icon:hover { background: rgba(0,0,0,0.05); color: var(--system-blue); }
         .btn-icon:active { transform: scale(0.8); }
         
         .btn-remove-task { opacity: 0; transform: scale(0.8); }
         .task-item:hover .btn-remove-task, .task-item:focus-within .btn-remove-task { opacity: 1; transform: scale(1); }
         .btn-remove-task:hover { color: var(--system-red); }
-        .drag-handle { cursor: grab; color: #D1D5DB; padding: 4px; margin-top: 2px; }
 
         .btn-add-activity {
             background: rgba(255, 255, 255, 0.5); color: var(--system-blue);
             border: 1px solid rgba(255, 255, 255, 0.8); border-radius: var(--radius-lg);
             padding: 16px; width: 100%; font-size: 1.15rem; font-weight: 600; cursor: pointer;
             backdrop-filter: blur(10px); display: flex; justify-content: center; gap: 8px; margin-bottom: 30px;
-            transition: transform 0.3s var(--bounce), background 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s var(--bounce), background 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .btn-add-activity:active { transform: scale(0.97); }
         .btn-add-activity:hover { background: rgba(255, 255, 255, 0.8); }
 
         .fab-whatsapp {
-            position: fixed; bottom: 40px; right: 40px;
-            background: var(--whatsapp-green); color: white; border: none; border-radius: 50%;
-            width: 68px; height: 68px; display: flex; align-items: center; justify-content: center;
+            position: fixed; bottom: 40px; right: 40px; background: var(--system-green); color: white;
+            border: none; border-radius: 50%; width: 68px; height: 68px; display: flex; align-items: center; justify-content: center;
             box-shadow: 0 10px 25px rgba(52, 199, 89, 0.4); cursor: pointer; z-index: 1000;
             transition: transform 0.3s var(--bounce), background 0.3s;
         }
         .fab-whatsapp:hover { transform: translateY(-5px) scale(1.08); }
         .fab-whatsapp:active { transform: scale(0.9); }
 
-        /* Toast */
         .toast {
             position: fixed; top: -80px; left: 50%; transform: translateX(-50%);
             background: rgba(28, 28, 30, 0.9); backdrop-filter: blur(20px);
             color: white; padding: 16px 32px; border-radius: 30px; font-weight: 500;
             transition: top 0.5s var(--bounce); z-index: 1001;
-            display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
         }
         .toast.show { top: 40px; }
 
@@ -250,7 +249,6 @@
             body { padding: 20px 15px 120px 15px; }
             .activity-card { padding: 20px 15px; }
             .btn-remove-task { opacity: 1; transform: scale(1); }
-            .drag-handle { display: none; }
             .fab-whatsapp { bottom: 25px; right: 25px; width: 60px; height: 60px; }
         }
     </style>
@@ -258,7 +256,10 @@
 <body>
 
     <div class="container">
-        <header><h1>Tasky</h1></header>
+        <header>
+            <div class="version-badge">v4.0</div>
+            <h1>Tasky</h1>
+        </header>
         
         <div id="activities-container"></div>
 
@@ -269,7 +270,9 @@
 
         <div id="completed-container" class="activity-card completed-card" style="display: none;">
             <div class="activity-header">
-                <div class="title-row"><h2 class="activity-title" readonly>✅ Completadas</h2></div>
+                <div class="title-row">
+                    <h2 class="activity-title" readonly>✅ Completadas</h2>
+                </div>
             </div>
             <div class="task-list" id="global-completed-list"></div>
         </div>
@@ -285,53 +288,77 @@
     </div>
 
     <script>
+        // ==========================================
+        // VARIABLES GLOBALES (DRAG & DROP)
+        // ==========================================
+        let draggedTask = null;
+        let draggedCard = null;
+
         document.addEventListener('input', (e) => {
             if(e.target.classList.contains('task-input')) {
                 autoResizeTextarea(e.target);
-                updateLogic(); // Solo actualiza la barra de progreso
+                updateLogic(); 
             }
             saveData();
         });
 
-        window.onload = () => { loadData(); };
+        window.onload = () => { loadData(); setupContainerDrag(); };
 
         function getTodayString() {
             const d = new Date();
             return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
         }
 
-        // Auto-resize para el text-area (Multilínea)
         function autoResizeTextarea(el) {
             el.style.height = 'auto';
             el.style.height = (el.scrollHeight) + 'px';
         }
 
         // ==========================================
-        // LÓGICA DE PROGRESO (Sin Bloqueo de Tareas)
+        // LÓGICA DE PROGRESO & DASHBOARD
         // ==========================================
+        function toggleStats(btn) {
+            const panel = btn.closest('.activity-card').querySelector('.stats-panel');
+            panel.classList.toggle('open');
+        }
+
         function updateLogic() {
             document.querySelectorAll('.activity-card:not(.completed-card)').forEach(card => {
                 const tasks = card.querySelectorAll('.task-item:not(.completed)');
-                let total = 0; let done = 0;
+                let pendingCount = 0;
 
                 tasks.forEach(task => {
                     const input = task.querySelector('.task-input');
-                    // Contamos las que tienen texto
-                    if(input && input.value.trim() !== '') total++;
+                    if(input && input.value.trim() !== '') pendingCount++;
                 });
 
                 const cardId = card.id;
-                const completedInGlobal = document.querySelectorAll(`.task-item.completed[data-origin-id="${cardId}"]`).length;
-                total += completedInGlobal;
-                done += completedInGlobal;
+                const completedCount = document.querySelectorAll(`.task-item.completed[data-origin-id="${cardId}"]`).length;
+                const total = pendingCount + completedCount;
 
-                // Animación de Barra de Progreso
+                // Actualizar Barra de Progreso
                 const progressText = card.querySelector('.progress-text');
                 const progressFill = card.querySelector('.progress-bar-fill');
-                if(progressText) progressText.innerText = `${done}/${total}`;
+                if(progressText) progressText.innerText = `${completedCount}/${total}`;
                 
-                let percent = total === 0 ? 0 : (done / total) * 100;
+                let percent = total === 0 ? 0 : Math.round((completedCount / total) * 100);
                 if(progressFill) progressFill.style.width = `${percent}%`;
+
+                // Actualizar Dashboard (Widget)
+                const panel = card.querySelector('.stats-panel');
+                if (panel) {
+                    panel.querySelector('.stat-total').innerText = total;
+                    panel.querySelector('.stat-completed').innerText = completedCount;
+                    panel.querySelector('.stat-percent').innerText = `${percent}%`;
+                    
+                    let msg = "Añade tareas para empezar.";
+                    if(percent === 100 && total > 0) msg = "¡Fase completada! Excelente ritmo. 🚀";
+                    else if (percent >= 50) msg = "¡Ya pasaste la mitad, sigue así! 🔥";
+                    else if (percent > 0) msg = "Buen inicio, mantén el enfoque. 🎯";
+                    else if (total > 0) msg = "¡Es hora de empezar con esta fase! 💪";
+                    
+                    panel.querySelector('.stat-msg').innerText = msg;
+                }
             });
         }
 
@@ -341,6 +368,9 @@
             saveData();
         }
 
+        // ==========================================
+        // GUARDAR / CARGAR DATOS
+        // ==========================================
         function saveData() {
             const data = { categories: [], completed: [] };
             document.querySelectorAll('.activity-card:not(.completed-card)').forEach(card => {
@@ -352,24 +382,23 @@
                         tasks.push({ text, date: t.dataset.date, critical: t.classList.contains('is-critical') });
                     }
                 });
-                data.categories.push({ title, tasks });
+                data.categories.push({ id: card.id, title, tasks });
             });
             document.querySelectorAll('.task-item.completed').forEach(t => {
                 const text = t.querySelector('.task-input').value;
                 if(text.trim() !== '') data.completed.push({ text, date: t.dataset.date, origin: t.dataset.originId });
             });
-            localStorage.setItem('tasky_pro_v3', JSON.stringify(data));
+            localStorage.setItem('tasky_pro_v4', JSON.stringify(data));
         }
 
         function loadData() {
-            const dataStr = localStorage.getItem('tasky_pro_v3');
+            const dataStr = localStorage.getItem('tasky_pro_v4');
             if (dataStr) {
                 const data = JSON.parse(dataStr);
                 if(data.categories && data.categories.length > 0) {
                     data.categories.forEach((cat, index) => {
-                        // Añadimos un leve retraso para que las tarjetas entren en cascada (Staggered animation)
                         setTimeout(() => {
-                            const card = addActivity(cat.title, false);
+                            const card = addActivity(cat.title, false, cat.id);
                             const list = card.querySelector('.task-list');
                             cat.tasks.forEach(task => {
                                 const input = createTaskElement(list, null, task.date);
@@ -378,7 +407,7 @@
                                 setTimeout(()=> autoResizeTextarea(input), 0);
                             });
                             createTaskElement(list, null, getTodayString()); 
-                        }, index * 150); 
+                        }, index * 100); 
                     });
                 }
                 if (data.completed && data.completed.length > 0) {
@@ -390,31 +419,44 @@
                             input.value = task.text;
                             const taskItem = input.closest('.task-item');
                             taskItem.classList.add('completed');
+                            taskItem.draggable = false;
                             taskItem.dataset.originId = task.origin;
                         });
                         updateLogic();
-                    }, data.categories ? data.categories.length * 150 : 100);
+                    }, data.categories ? data.categories.length * 100 + 100 : 100);
                 }
             } else {
                 addActivity('☀️ Fase 1: Mañana / Casa');
-                setTimeout(() => { addActivity('🏃 Fase 2: Ruta / Compras'); }, 200);
+                setTimeout(() => { addActivity('🏃 Fase 2: Ruta / Compras'); }, 150);
             }
         }
 
         let activityCounter = 0;
-        function addActivity(title = '', createEmptyTask = true) {
+        function addActivity(title = '', createEmptyTask = true, forceId = null) {
             activityCounter++;
             const container = document.getElementById('activities-container');
             const card = document.createElement('div');
-            card.className = 'activity-card'; card.id = 'activity-' + activityCounter;
+            card.className = 'activity-card'; 
+            card.id = forceId || 'activity-' + activityCounter;
+            card.draggable = true; // Activa Drag & Drop para la Tarjeta
             
             card.innerHTML = `
                 <div class="activity-header">
                     <div class="title-row">
+                        <div class="card-drag-handle" title="Mover Sección"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
                         <input type="text" class="activity-title" value="${title}" placeholder="Fase o Bloque de tiempo...">
-                        <button class="btn-icon" onclick="this.closest('.activity-card').remove(); updateLogic(); saveData();">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
+                        <div class="header-actions">
+                            <button class="btn-icon" onclick="toggleStats(this)" title="Ver Avance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
+                            <button class="btn-icon" onclick="this.closest('.activity-card').remove(); updateLogic(); saveData();" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="stats-panel">
+                        <div class="stats-grid">
+                            <div class="stat-box"><span class="stat-value stat-total">0</span><span class="stat-label">Total</span></div>
+                            <div class="stat-box"><span class="stat-value stat-completed">0</span><span class="stat-label">Listas</span></div>
+                            <div class="stat-box"><span class="stat-value stat-percent">0%</span><span class="stat-label">Avance</span></div>
+                        </div>
+                        <div class="stat-msg"></div>
                     </div>
                     <div class="progress-container">
                         <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
@@ -425,7 +467,24 @@
             `;
             container.appendChild(card);
             
-            if(createEmptyTask) createTaskElement(card.querySelector('.task-list'), null, getTodayString());
+            // Eventos Drag & Drop de Tarjeta
+            card.addEventListener('dragstart', function(e) {
+                if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') {
+                    e.preventDefault(); return; 
+                }
+                draggedCard = this;
+                setTimeout(() => this.classList.add('is-dragging'), 0);
+            });
+            card.addEventListener('dragend', function() {
+                this.classList.remove('is-dragging');
+                draggedCard = null;
+                saveData();
+            });
+
+            const taskList = card.querySelector('.task-list');
+            setupTaskListDrag(taskList);
+
+            if(createEmptyTask) createTaskElement(taskList, null, getTodayString());
             updateLogic(); saveData();
             return card;
         }
@@ -433,10 +492,11 @@
         function createTaskElement(listContainer, insertAfter = null, dateStr = null) {
             const task = document.createElement('div');
             task.className = 'task-item';
+            task.draggable = true; // Activa Drag & Drop de Tarea
             task.dataset.date = dateStr || getTodayString();
 
             task.innerHTML = `
-                <div class="drag-handle"><svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="18" x2="16" y2="18"></line></svg></div>
+                <div class="drag-handle" title="Mover Tarea"><svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="18" x2="16" y2="18"></line></svg></div>
                 <button class="btn-priority" onclick="togglePriority(this)" title="Marcar urgente">🚩</button>
                 <div class="btn-check" onclick="toggleComplete(this)"></div>
                 <textarea class="task-input" rows="1" placeholder="Añadir tarea..." onkeydown="handleEnter(event, this)" onpaste="handlePaste(event, this)"></textarea>
@@ -445,10 +505,63 @@
                 </button>
             `;
             
+            // Eventos Drag & Drop de Tarea (Evitando conflicto con la tarjeta)
+            task.addEventListener('dragstart', function(e) {
+                if(this.classList.contains('completed')) { e.preventDefault(); return; }
+                draggedTask = this;
+                e.stopPropagation(); // Evita que se mueva la tarjeta entera
+                setTimeout(() => this.classList.add('is-dragging'), 0);
+            });
+            task.addEventListener('dragend', function(e) {
+                this.classList.remove('is-dragging');
+                draggedTask = null;
+                e.stopPropagation();
+                updateLogic(); saveData();
+            });
+
             if (insertAfter) insertAfter.after(task);
             else listContainer.appendChild(task);
             return task.querySelector('.task-input');
         }
+
+        // ==========================================
+        // MOTOR DRAG & DROP (Mover entre Listas y Mover Secciones)
+        // ==========================================
+        function setupContainerDrag() {
+            const container = document.getElementById('activities-container');
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                if (!draggedCard) return; // Solo actuar si movemos una tarjeta
+                const afterElement = getDragAfterElement(container, e.clientY, '.activity-card:not(.is-dragging)');
+                if (afterElement == null) container.appendChild(draggedCard);
+                else container.insertBefore(draggedCard, afterElement);
+            });
+        }
+
+        function setupTaskListDrag(list) {
+            list.addEventListener('dragover', e => {
+                e.preventDefault();
+                if (!draggedTask) return; // Solo actuar si movemos una tarea
+                const afterElement = getDragAfterElement(list, e.clientY, '.task-item:not(.is-dragging):not(.completed)');
+                if (afterElement == null) list.appendChild(draggedTask);
+                else list.insertBefore(draggedTask, afterElement);
+            });
+        }
+
+        // Función matemática para calcular dónde insertar (Sirve para tarjetas y tareas)
+        function getDragAfterElement(container, y, selector) {
+            const draggableElements = [...container.querySelectorAll(selector)];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        // ==========================================
 
         function handlePaste(event, input) {
             const text = (event.clipboardData || window.clipboardData).getData('text');
@@ -461,7 +574,6 @@
                 const list = currentItem.parentElement;
                 
                 for (let i = 1; i < lines.length; i++) {
-                    // Timeout ligero para que la animación de entrada se note en pegado múltiple
                     setTimeout(() => {
                         const newInput = createTaskElement(list, currentItem, getTodayString());
                         newInput.value = lines[i]; autoResizeTextarea(newInput);
@@ -481,18 +593,19 @@
             const globalList = document.getElementById('global-completed-list');
             const container = document.getElementById('completed-container');
 
-            // Animación de salida antes de mover la tarea
             taskItem.style.opacity = '0'; 
             taskItem.style.transform = 'scale(0.9)';
             
             setTimeout(() => {
                 if (!isCompleted) {
                     taskItem.classList.add('completed');
+                    taskItem.draggable = false;
                     taskItem.dataset.originId = taskItem.closest('.activity-card').id; 
                     globalList.appendChild(taskItem);
                     container.style.display = 'block'; 
                 } else {
                     taskItem.classList.remove('completed');
+                    taskItem.draggable = true;
                     const originCard = document.getElementById(taskItem.dataset.originId);
                     if (originCard) originCard.querySelector('.task-list').appendChild(taskItem);
                     else {
@@ -502,12 +615,7 @@
                     if(globalList.children.length === 0) container.style.display = 'none';
                 }
                 
-                // Reset de animación al llegar a su nuevo destino
-                setTimeout(() => {
-                    taskItem.style.opacity = '1'; 
-                    taskItem.style.transform = 'scale(1)';
-                }, 50);
-                
+                setTimeout(() => { taskItem.style.opacity = '1'; taskItem.style.transform = 'scale(1)'; }, 50);
                 updateLogic(); saveData();
             }, 250);
         }
