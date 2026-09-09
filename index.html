@@ -3,211 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- ==========================================
-         TASKY - PRO EDITION 
-         Versión: 11.0
-         Actualizaciones: 
-         - Motor de rescate de datos locales vs Nube Vacía.
-         - Empty State UI (Estado vacío profesional).
-         - Credenciales integradas.
-         ========================================== -->
+    <!-- Tasky v12.0 - PWA Ready, Mobile Scroll Fix & Overdue Engine -->
     <title>Tasky</title>
+    
+    <!-- Etiquetas PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFDFBA">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
         :root {
-            --system-blue: #007AFF;
-            --system-red: #FF3B30;
-            --system-orange: #FF9500;
-            --system-green: #34C759;
-            --system-gray: #8E8E93;
-            --card-bg: rgba(255, 255, 255, 0.85);
-            --text-main: #1C1C1E;
-            --text-muted: #8E8E93;
-            --radius-lg: 24px;
-            --radius-md: 16px;
-            --radius-sm: 10px;
-            --transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            --bounce: cubic-bezier(0.34, 1.56, 0.64, 1); 
+            --system-blue: #007AFF; --system-red: #FF3B30; --system-orange: #FF9500;
+            --system-green: #34C759; --system-gray: #8E8E93; --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1C1C1E; --text-muted: #8E8E93; --radius-lg: 24px; --radius-md: 16px;
+            --transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); --bounce: cubic-bezier(0.34, 1.56, 0.64, 1); 
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
-            color: var(--text-main);
-            display: flex; justify-content: center;
-            min-height: 100vh;
-            padding: 40px 20px 140px 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            color: var(--text-main); display: flex; justify-content: center;
+            min-height: 100vh; padding: 40px 20px 140px 20px;
             background: linear-gradient(-45deg, #FFB3BA, #FFDFBA, #BAFFC9, #BAE1FF, #E0C3FC, #FFC3A0);
-            background-size: 600% 600%;
-            animation: moveBackground 25s ease-in-out infinite;
-            background-attachment: fixed;
+            background-size: 600% 600%; animation: moveBackground 25s ease-in-out infinite; background-attachment: fixed;
         }
 
         @keyframes moveBackground { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
         .container { width: 100%; max-width: 750px; }
 
-        header { margin-bottom: 30px; text-align: center; position: relative; }
-
-        .cloud-status {
-            position: absolute; top: -15px; right: 50%; transform: translateX(50%);
-            background: rgba(255, 255, 255, 0.5); padding: 6px 12px; border-radius: 20px;
-            font-size: 0.85rem; font-weight: 700; color: var(--system-blue);
+        /* Contenedor de Header y Botones Superiores */
+        .header-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: relative; z-index: 100;}
+        
+        .cloud-status, .btn-overdue {
+            background: rgba(255, 255, 255, 0.7); padding: 8px 14px; border-radius: 20px;
+            font-size: 0.9rem; font-weight: 700; color: var(--system-blue);
             backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05);
             display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            transition: var(--transition); cursor: pointer; z-index: 100;
+            cursor: pointer; transition: transform 0.2s var(--bounce);
         }
-        .cloud-status:hover { transform: translateX(50%) scale(1.05); }
-        .spin { animation: spin 1.5s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .cloud-status:active, .btn-overdue:active { transform: scale(0.95); }
+        .btn-overdue { color: var(--system-red); display: none; } /* Oculto si no hay atrasadas */
 
         h1 {
-            font-size: 3.8rem; font-weight: 800; margin: 0; margin-top: 10px;
+            font-size: 3.8rem; font-weight: 800; text-align: center; margin-bottom: 30px;
             background: linear-gradient(90deg, #007AFF, #5856D6, #FF2D55, #FF9500, #34C759, #007AFF);
-            background-size: 200% auto;
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             animation: gradientTitle 6s linear infinite; letter-spacing: -1.5px;
         }
-
         @keyframes gradientTitle { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
 
-        /* ======== ESTADO VACÍO (EMPTY STATE) ======== */
-        .empty-state {
-            text-align: center; padding: 60px 20px; color: var(--system-gray);
-            animation: slideUpFade 0.6s var(--bounce) both;
-        }
+        /* Empty State */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--system-gray); animation: slideUpFade 0.6s var(--bounce) both; }
         .empty-state svg { opacity: 0.4; margin-bottom: 20px; }
-        .empty-state h3 { font-size: 1.5rem; margin-bottom: 10px; color: var(--text-main); font-weight: 700; letter-spacing: -0.5px;}
-        .empty-state p { font-size: 1.05rem; line-height: 1.5; }
+        .empty-state h3 { font-size: 1.5rem; margin-bottom: 10px; color: var(--text-main); font-weight: 700; }
 
-        /* ======== TARJETAS (FASES) ======== */
+        /* Tarjetas */
         .activity-card {
-            background: var(--card-bg); border-radius: var(--radius-lg);
-            padding: 24px 30px; margin-bottom: 24px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
-            backdrop-filter: blur(25px) saturate(200%); -webkit-backdrop-filter: blur(25px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            position: relative; animation: slideUpFade 0.6s var(--bounce) both;
+            background: var(--card-bg); border-radius: var(--radius-lg); padding: 24px 30px; margin-bottom: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.8);
+            animation: slideUpFade 0.6s var(--bounce) both;
         }
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
 
         .sortable-ghost-card { opacity: 0.3; background: var(--system-gray); border-radius: var(--radius-lg); }
-        .sortable-ghost-task { height: 4px !important; padding: 0 !important; margin: 4px 0 !important; background-color: var(--system-blue) !important; border: none !important; box-shadow: 0 0 10px var(--system-blue) !important; border-radius: 4px !important; overflow: hidden !important; }
+        .sortable-ghost-task { height: 4px !important; padding: 0 !important; margin: 4px 0 !important; background-color: var(--system-blue) !important; border: none !important; border-radius: 4px !important; overflow: hidden !important; }
         .sortable-ghost-task * { display: none !important; } 
-        .sortable-drag { cursor: grabbing !important; box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important; transform: scale(1.02); opacity: 0.95; }
-        .selected-task { background-color: rgba(0, 122, 255, 0.12) !important; border-color: var(--system-blue) !important; box-shadow: 0 0 12px rgba(0, 122, 255, 0.15) !important; transform: scale(1.01); }
+        .sortable-drag { cursor: grabbing !important; box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important; opacity: 0.95; }
+        .selected-task { background-color: rgba(0, 122, 255, 0.12) !important; border-color: var(--system-blue) !important; transform: scale(1.01); }
 
-        .title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; flex-wrap: nowrap; }
-        .card-drag-handle { cursor: grab; color: var(--text-muted); padding: 5px; display: flex; transition: var(--transition); flex-shrink: 0; }
-        .card-drag-handle:active { cursor: grabbing; transform: scale(0.9); }
-        .card-drag-handle:hover { color: var(--system-blue); }
-        .activity-title { flex-grow: 1; min-width: 0; font-size: 1.4rem; font-weight: 700; color: var(--text-main); border: none; padding: 4px 0; background: transparent; outline: none; transition: var(--transition); }
-        .header-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+        .title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
+        .card-drag-handle { cursor: grab; color: var(--text-muted); padding: 5px; transition: var(--transition); flex-shrink: 0; }
+        .activity-title { flex-grow: 1; font-size: 1.4rem; font-weight: 700; color: var(--text-main); border: none; background: transparent; outline: none; }
+        .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
         .progress-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .progress-bar-bg { flex-grow: 1; height: 6px; background: rgba(0,0,0,0.08); border-radius: 10px; overflow: hidden; }
         .progress-bar-fill { height: 100%; width: 0%; background: var(--system-blue); border-radius: 10px; transition: width 0.8s var(--bounce); }
         .progress-text { font-size: 0.85rem; font-weight: 600; color: var(--system-gray); }
 
-        .stats-panel { background: rgba(255, 255, 255, 0.6); border-radius: var(--radius-md); max-height: 0; overflow: hidden; opacity: 0; margin-bottom: 0; transition: max-height 0.5s var(--bounce), opacity 0.4s, margin 0.4s, padding 0.4s; display: flex; flex-direction: column; }
-        .stats-panel.open { max-height: 200px; opacity: 1; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(0,0,0,0.05); }
-        .stats-grid { display: flex; justify-content: space-between; text-align: center; margin-bottom: 12px; }
-        .stat-box { display: flex; flex-direction: column; width: 30%; }
-        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--system-blue); }
-        .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--system-gray); text-transform: uppercase; letter-spacing: 0.5px;}
-        .stat-msg { font-size: 0.95rem; font-weight: 500; color: var(--text-main); text-align: center; background: rgba(0,0,0,0.05); padding: 10px; border-radius: 10px; }
-
-        /* ======== LISTA DE TAREAS ======== */
+        /* Tareas */
         .task-list { list-style: none; display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
-        .task-item { display: flex; align-items: flex-start; background: rgba(255, 255, 255, 0.9); border-radius: var(--radius-md); padding: 12px 10px; border: 1px solid rgba(255, 255, 255, 0.5); transition: border 0.3s, background 0.3s, box-shadow 0.3s, transform 0.4s var(--bounce); position: relative; }
-        .task-item:hover:not(.is-dragging):not(.selected-task) { transform: translateX(4px); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .task-item {
+            display: flex; align-items: flex-start; background: rgba(255, 255, 255, 0.9); border-radius: var(--radius-md); padding: 12px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.5); transition: border 0.3s, transform 0.4s var(--bounce);
+        }
         .task-item.is-critical { background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.3); }
         .task-item.is-critical .task-input { font-weight: 600; }
         .task-item:focus-within:not(.selected-task) { background: #FFFFFF; box-shadow: 0 6px 15px rgba(0,0,0,0.08); transform: scale(1.02); z-index: 2; }
 
-        .drag-handle { cursor: grab; color: #D1D5DB; padding: 4px; margin-top: 2px; transition: transform 0.2s var(--bounce), color 0.2s; display: flex; flex-shrink: 0; }
-        .drag-handle:active { cursor: grabbing; transform: scale(0.8); }
-        .task-item:hover .drag-handle { color: var(--system-gray); }
-
-        .btn-priority { background: transparent; border: none; cursor: pointer; font-size: 1.2rem; color: #D1D5DB; margin-right: 6px; transition: transform 0.3s var(--bounce), color 0.3s; padding-top: 2px; flex-shrink: 0;}
-        .btn-priority:active { transform: scale(0.6); }
+        .drag-handle { cursor: grab; color: #D1D5DB; padding: 4px; margin-top: 2px; flex-shrink: 0; }
+        .btn-priority { background: transparent; border: none; cursor: pointer; font-size: 1.2rem; color: #D1D5DB; margin-right: 6px; padding-top: 2px;}
         .is-critical .btn-priority { color: var(--system-red); transform: scale(1.1); }
 
-        .btn-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #C7C7CC; background: transparent; cursor: pointer; margin-right: 12px; flex-shrink: 0; margin-top: 2px; transition: transform 0.3s var(--bounce), border-color 0.2s, background 0.2s; }
-        .btn-check:hover { border-color: var(--system-blue); }
-        .btn-check:active { transform: scale(0.7); }
+        .btn-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #C7C7CC; background: transparent; cursor: pointer; margin-right: 12px; flex-shrink: 0; margin-top: 2px; }
+        .task-input { flex-grow: 1; border: none; padding: 4px; font-size: 1.05rem; color: var(--text-main); background: transparent; outline: none; resize: none; overflow: hidden; font-family: inherit; line-height: 1.4; }
+        .btn-icon { background: transparent; border: none; cursor: pointer; padding: 6px; color: var(--system-gray); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-        .task-input { flex-grow: 1; min-width: 0; border: none; padding: 4px; font-size: 1.05rem; color: var(--text-main); background: transparent; outline: none; width: 100%; resize: none; overflow: hidden; font-family: inherit; line-height: 1.4; transition: height 0.2s ease; }
-        .task-input::placeholder { color: #C7C7CC; }
-
-        /* ======== COMPLETADAS ======== */
+        /* Completadas */
         .completed-card { background: rgba(255,255,255,0.5); border: 1px dashed rgba(0,0,0,0.1); box-shadow: none; }
-        .task-item.completed { background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0; transform: none; box-shadow: none;}
-        .task-item.completed:hover { transform: none; }
-        .task-item.completed .task-input { text-decoration: line-through; color: var(--system-gray); font-weight: normal;}
+        .task-item.completed { background: transparent; border: none; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0; }
+        .task-item.completed .task-input { text-decoration: line-through; color: var(--system-gray); }
         .task-item.completed .drag-handle, .task-item.completed .btn-priority { display: none; }
         .task-item.completed .btn-check { background: var(--system-blue); border-color: var(--system-blue); position: relative; }
         @keyframes checkDraw { 0% { width: 0; height: 0; opacity: 0;} 100% { width: 5px; height: 11px; opacity: 1;} }
         .task-item.completed .btn-check::after { content: ''; position: absolute; left: 7px; top: 4px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); animation: checkDraw 0.4s var(--bounce) forwards; }
 
-        .btn-icon { background: transparent; border: none; cursor: pointer; padding: 6px; color: var(--system-gray); transition: transform 0.2s var(--bounce), color 0.2s, background 0.2s; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .btn-icon:hover { background: rgba(0,0,0,0.05); color: var(--system-blue); }
-        .btn-icon:active { transform: scale(0.8); }
-        .btn-remove-task { opacity: 0; transform: scale(0.8); }
-        .task-item:hover .btn-remove-task, .task-item:focus-within .btn-remove-task { opacity: 1; transform: scale(1); }
-        .btn-remove-task:hover { color: var(--system-red); background: rgba(255, 59, 48, 0.1); }
-
-        /* ======== MENÚ FLOTANTE ======== */
+        /* FAB */
         .fab-wrapper { position: fixed; bottom: 40px; right: 40px; z-index: 1000; display: flex; flex-direction: column-reverse; align-items: center; gap: 15px; }
-        .fab-btn { border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.3s var(--bounce), box-shadow 0.3s, opacity 0.3s; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .fab-btn { border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .fab-main { width: 68px; height: 68px; background: var(--system-blue); z-index: 2; }
-        .fab-main:hover { transform: scale(1.08); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
-        .fab-main:active { transform: scale(0.9); }
-        .fab-main svg { transition: transform 0.4s var(--bounce); }
-        .fab-wrapper.active .fab-main svg { transform: rotate(135deg); } 
-        
         .fab-sub { width: 52px; height: 52px; opacity: 0; visibility: hidden; transform: translateY(20px) scale(0.5); z-index: 1; position: absolute; }
-        .fab-wrapper.active .fab-sub { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
-        .fab-wrapper.active .fab-sub:nth-child(2) { bottom: 85px; transition-delay: 0.05s; }
-        .fab-wrapper.active .fab-sub:nth-child(3) { bottom: 150px; transition-delay: 0.1s; }
-        .fab-wrapper.active .fab-sub:nth-child(4) { bottom: 215px; transition-delay: 0.15s; }
-        .fab-sub:hover { transform: scale(1.1) !important; }
-        
+        .fab-wrapper.active .fab-main svg { transform: rotate(135deg); transition: 0.3s; } 
+        .fab-wrapper.active .fab-sub { opacity: 1; visibility: visible; transform: translateY(0) scale(1); transition: 0.3s var(--bounce); }
+        .fab-wrapper.active .fab-sub:nth-child(2) { bottom: 85px; }
+        .fab-wrapper.active .fab-sub:nth-child(3) { bottom: 150px; transition-delay: 0.05s; }
         .bg-green { background: var(--system-green); }
-        .bg-gray { background: #333333; }
 
-        .toast { position: fixed; top: -80px; left: 50%; transform: translateX(-50%); background: rgba(28, 28, 30, 0.95); backdrop-filter: blur(20px); color: white; padding: 16px 32px; border-radius: 30px; font-weight: 500; transition: top 0.6s var(--bounce); z-index: 1001; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-        .toast.show { top: 40px; }
+        /* Modal Atrasadas */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: var(--transition); z-index: 2000;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: var(--card-bg); border-radius: var(--radius-lg); padding: 25px;
+            width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2); transform: scale(0.9); transition: var(--transition);
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .overdue-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.8); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(255,59,48,0.2); }
+        .overdue-text { flex-grow: 1; font-weight: 500; font-size: 1.05rem; margin-right: 10px;}
+        .overdue-date { font-size: 0.75rem; color: var(--system-red); display: block; margin-top: 4px; font-weight: 600;}
+        .overdue-actions button { background: var(--system-blue); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .overdue-actions button.del { background: rgba(255,59,48,0.1); color: var(--system-red); margin-right: 5px; }
 
         @media (max-width: 768px) {
             body { padding: 20px 15px 140px 15px; }
             .activity-card { padding: 20px 15px; }
-            .btn-remove-task { opacity: 1; transform: scale(1); color: #C7C7CC; }
             .fab-wrapper { bottom: 25px; right: 25px; }
             .fab-main { width: 60px; height: 60px; }
+            /* Se oculta el botón de arrastre en móvil para evitar conflictos táctiles */
+            .drag-handle { display: none; }
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <header>
+        <div class="header-controls">
             <div class="cloud-status" id="cloudIndicator" onclick="forceSync()">
                 <span id="cloudIcon">☁️</span> <span id="cloudText">Conectando...</span>
             </div>
-            <h1>Tasky</h1>
-        </header>
-        
-        <div id="activities-container">
-            <div id="loadingApp" style="text-align: center; color: var(--system-gray); margin-top: 50px;">
-                Cargando datos desde la nube... ☁️🔄
+            <div class="btn-overdue" id="btnOverdue" onclick="openOverdueModal()">
+                ⚠️ <span id="overdueCount">0</span> Atrasadas
             </div>
         </div>
 
-        <!-- Estado Vacío (Empty State) -->
+        <h1>Tasky</h1>
+        
+        <div id="activities-container">
+            <div id="loadingApp" style="text-align: center; color: var(--system-gray); margin-top: 50px;">
+                Cargando datos... ☁️🔄
+            </div>
+        </div>
+
         <div id="empty-state" class="empty-state" style="display: none;">
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
@@ -218,53 +184,44 @@
 
         <div id="completed-container" class="activity-card completed-card" style="display: none;">
             <div class="activity-header">
-                <div class="title-row"><h2 class="activity-title" readonly>✅ Completadas</h2></div>
+                <div class="title-row"><h2 class="activity-title" readonly>✅ Completadas de Hoy</h2></div>
             </div>
             <div class="task-list" id="global-completed-list"></div>
         </div>
         
-        <!-- Menú Flotante (FAB) -->
         <div class="fab-wrapper" id="fabMenu">
             <button class="fab-btn fab-main" onclick="toggleFabMenu()">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
-            <button class="fab-btn fab-sub bg-blue" onclick="addActivity(); toggleFabMenu();" title="Nueva Fase" style="background: var(--system-blue);">
+            <button class="fab-btn fab-sub bg-blue" onclick="addActivity(); toggleFabMenu();" style="background: var(--system-blue);">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
-            <button class="fab-btn fab-sub bg-green" onclick="copyToWhatsApp(); toggleFabMenu();" title="Copiar WhatsApp">
+            <button class="fab-btn fab-sub bg-green" onclick="copyToWhatsApp(); toggleFabMenu();">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-            </button>
-            <button class="fab-btn fab-sub bg-gray" onclick="forceSync(); toggleFabMenu();" title="Forzar Sincronización">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
             </button>
         </div>
     </div>
 
-    <div id="toast" class="toast">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#34C759" width="22" height="22" stroke-width="2" id="toastIcon"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-        <span id="toastMsg">Notificación</span>
+    <!-- Modal Tareas Atrasadas -->
+    <div class="modal-overlay" id="overdueModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; color: var(--text-main);">⚠️ Tareas Atrasadas</h2>
+            <div id="overdueList"></div>
+            <button onclick="closeOverdueModal()" style="width:100%; padding: 12px; background:var(--system-gray); color:white; border:none; border-radius:12px; margin-top:15px; font-weight:bold; cursor:pointer;">Cerrar</button>
+        </div>
     </div>
 
     <script>
-        // ==========================================
-        // CREDENCIALES CLOUD (HARDCODEADAS)
-        // ==========================================
         const JSONBIN_ID = '6aa08413ac6210605ab55f24';
         const JSONBIN_KEY = '$2a$10$7PwFegDVLzoS8bJTQPdA7.27bk7D4odCTFnynWW1NkB5H6.PBt.nm';
         const API_URL = 'https://api.jsonbin.io/v3/b/';
         let cloudSyncTimer; 
-        const DEBOUNCE_DELAY = 2500;
+        let overdueTasksDB = [];
 
         if (typeof Sortable !== 'undefined' && typeof Sortable.MultiDrag !== 'undefined') Sortable.mount(new Sortable.MultiDrag());
-        let sortableCards;
 
         document.addEventListener('input', (e) => {
             if(e.target.classList.contains('task-input')) { autoResizeTextarea(e.target); updateLogic(); }
-            saveDataLocalAndCloud();
-        });
-
-        window.addEventListener('beforeunload', () => {
-            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
             saveDataLocalAndCloud();
         });
 
@@ -274,116 +231,129 @@
         function autoResizeTextarea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
         function toggleFabMenu() { document.getElementById('fabMenu').classList.toggle('active'); }
 
-        // ==========================================
-        // MOTOR CLOUD SYNC & RESCATE DE DATOS
-        // ==========================================
         function updateCloudUI(status) {
             const icon = document.getElementById('cloudIcon');
             const text = document.getElementById('cloudText');
             icon.classList.remove('spin');
-            if(status === 'offline') { icon.innerText = '☁️❌'; text.innerText = 'Modo Local'; }
+            if(status === 'offline') { icon.innerText = '☁️❌'; text.innerText = 'Local'; }
             else if(status === 'syncing') { icon.innerText = '🔄'; icon.classList.add('spin'); text.innerText = 'Guardando...'; }
             else if(status === 'online') { icon.innerText = '☁️✅'; text.innerText = 'Sincronizado'; }
-            else if(status === 'error') { icon.innerText = '☁️⚠️'; text.innerText = 'Error Nube'; }
+            else if(status === 'error') { icon.innerText = '☁️⚠️'; text.innerText = 'Error'; }
         }
 
         async function loadApp() {
-            document.getElementById('activities-container').innerHTML = ''; 
-            document.getElementById('completed-container').style.display = 'none';
-            document.getElementById('global-completed-list').innerHTML = '';
-            
-            let dataStr = null;
-
             updateCloudUI('syncing');
+            let dataStr = null;
             try {
-                const response = await fetch(`${API_URL}${JSONBIN_ID}`, {
-                    headers: { 'X-Master-Key': JSONBIN_KEY }
-                });
-                
+                const response = await fetch(`${API_URL}${JSONBIN_ID}`, { headers: { 'X-Master-Key': JSONBIN_KEY } });
                 if (response.ok) {
                     const json = await response.json();
-                    let cloudData = json.record;
-
-                    // MOTOR DE RESCATE: Si la nube está literalmente vacía, buscamos en el historial del PC
-                    const isCloudEmpty = (!cloudData.categories || cloudData.categories.length === 0) && (!cloudData.completed || cloudData.completed.length === 0);
-                    
-                    if (isCloudEmpty) {
-                        let rescuedData = localStorage.getItem('tasky_pro_v10') || localStorage.getItem('tasky_pro_v9') || localStorage.getItem('tasky_pro_v8') || localStorage.getItem('tasky_pro_v7');
-                        
-                        if (rescuedData && rescuedData.length > 20) {
-                            showToast("Datos rescatados con éxito", true);
-                            dataStr = rescuedData;
-                            localStorage.setItem('tasky_pro_v11', dataStr);
-                            renderData(dataStr);
-                            saveDataLocalAndCloud(true); // Forzamos subida para poblar la nube vacía
-                            return; 
-                        }
-                    }
-
-                    dataStr = JSON.stringify(cloudData);
-                    localStorage.setItem('tasky_pro_v11', dataStr); 
+                    dataStr = JSON.stringify(json.record);
+                    localStorage.setItem('tasky_pro_v12', dataStr);
                     updateCloudUI('online');
-                } else {
-                    throw new Error('API Error');
-                }
+                } else throw new Error('API Error');
             } catch (error) {
-                console.error("Error fetching Cloud:", error);
                 updateCloudUI('error');
-                dataStr = localStorage.getItem('tasky_pro_v11') || localStorage.getItem('tasky_pro_v10'); 
+                dataStr = localStorage.getItem('tasky_pro_v12') || localStorage.getItem('tasky_pro_v11'); 
             }
-
             renderData(dataStr);
         }
 
-        function forceSync() {
-            showToast("Forzando sincronización...", true);
-            saveDataLocalAndCloud(true);
-        }
+        function forceSync() { updateCloudUI('syncing'); saveDataLocalAndCloud(true); }
 
         function renderData(dataStr) {
             document.getElementById('activities-container').innerHTML = '';
-            let hasData = false;
+            overdueTasksDB = [];
+            const today = getTodayString();
 
             if (dataStr && dataStr.length > 20) {
-                try {
-                    const data = JSON.parse(dataStr);
-                    if(data.categories && data.categories.length > 0) {
-                        hasData = true;
-                        data.categories.forEach((cat) => {
-                            const card = addActivity(cat.title, false, cat.id);
-                            const list = card.querySelector('.task-list');
-                            cat.tasks.forEach(task => {
+                const data = JSON.parse(dataStr);
+                if(data.categories) {
+                    data.categories.forEach((cat) => {
+                        const card = addActivity(cat.title, false, cat.id);
+                        const list = card.querySelector('.task-list');
+                        
+                        cat.tasks.forEach(task => {
+                            // Separar Atrasadas
+                            if (task.date < today && !task.critical) {
+                                overdueTasksDB.push({ ...task, originCat: cat.id });
+                            } else {
                                 const input = createTaskElement(list, null, task.date);
                                 input.value = task.text;
                                 if(task.critical) input.closest('.task-item').classList.add('is-critical');
                                 setTimeout(()=> autoResizeTextarea(input), 0);
-                            });
-                            createTaskElement(list, null, getTodayString()); 
+                            }
                         });
-                    }
-                    if (data.completed && data.completed.length > 0) {
-                        hasData = true;
-                        const globalList = document.getElementById('global-completed-list');
-                        document.getElementById('completed-container').style.display = 'block';
-                        data.completed.forEach(task => {
-                            const input = createTaskElement(globalList, null, task.date);
-                            input.value = task.text;
-                            const taskItem = input.closest('.task-item');
-                            taskItem.classList.add('completed');
-                            taskItem.dataset.originId = task.origin;
-                        });
-                    }
-                } catch(e) { console.error(e); }
+                        createTaskElement(list, null, today); 
+                    });
+                }
+            } else {
+                addActivity('☀️ Fase 1: Mañana');
             }
             
+            updateOverdueUI();
             updateLogic();
             
-            sortableCards = new Sortable(document.getElementById('activities-container'), {
-                animation: 400, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-                handle: '.card-drag-handle', ghostClass: 'sortable-ghost-card', dragClass: 'sortable-drag',
-                forceFallback: true, scroll: true, scrollSensitivity: 150, scrollSpeed: 30,
+            // Mobile Scroll Fix en SortableJS
+            new Sortable(document.getElementById('activities-container'), {
+                animation: 350, handle: '.card-drag-handle', forceFallback: true, 
+                delay: 150, delayOnTouchOnly: true, touchStartThreshold: 5, // FIX CELULAR
                 onEnd: function() { saveDataLocalAndCloud(); }
             });
+        }
+
+        function updateOverdueUI() {
+            const btn = document.getElementById('btnOverdue');
+            if (overdueTasksDB.length > 0) {
+                btn.style.display = 'flex';
+                document.getElementById('overdueCount').innerText = overdueTasksDB.length;
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        function openOverdueModal() {
+            const list = document.getElementById('overdueList');
+            list.innerHTML = '';
+            overdueTasksDB.forEach((task, index) => {
+                list.innerHTML += `
+                    <div class="overdue-item">
+                        <div class="overdue-text">${task.text} <span class="overdue-date">Creada: ${task.date}</span></div>
+                        <div class="overdue-actions">
+                            <button class="del" onclick="discardOverdue(${index})">✖</button>
+                            <button onclick="moveToToday(${index})">Mover a Hoy</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('overdueModal').classList.add('active');
+        }
+
+        function closeOverdueModal() { document.getElementById('overdueModal').classList.remove('active'); }
+
+        function discardOverdue(index) {
+            overdueTasksDB.splice(index, 1);
+            saveDataLocalAndCloud(true);
+            openOverdueModal(); updateOverdueUI();
+            if(overdueTasksDB.length === 0) closeOverdueModal();
+        }
+
+        function moveToToday(index) {
+            const task = overdueTasksDB[index];
+            overdueTasksDB.splice(index, 1);
+            
+            let targetCard = document.getElementById(task.originCat) || document.querySelector('.activity-card:not(.completed-card)');
+            if(targetCard) {
+                const list = targetCard.querySelector('.task-list');
+                const input = createTaskElement(list, null, getTodayString());
+                input.value = task.text;
+                if(task.critical) input.closest('.task-item').classList.add('is-critical');
+                setTimeout(()=> autoResizeTextarea(input), 0);
+            }
+            
+            saveDataLocalAndCloud(true);
+            openOverdueModal(); updateOverdueUI(); updateLogic();
+            if(overdueTasksDB.length === 0) closeOverdueModal();
         }
 
         function saveDataLocalAndCloud(instant = false) {
@@ -397,86 +367,40 @@
                         tasks.push({ text, date: t.dataset.date, critical: t.classList.contains('is-critical') });
                     }
                 });
-                data.categories.push({ id: card.id, title, tasks });
-            });
-            document.querySelectorAll('.task-item.completed').forEach(t => {
-                const text = t.querySelector('.task-input').value;
-                if(text.trim() !== '') data.completed.push({ text, date: t.dataset.date, origin: t.dataset.originId });
+                // Re-inyectar las tareas atrasadas para que no se pierdan de la DB general
+                const cardOverdue = overdueTasksDB.filter(o => o.originCat === card.id);
+                data.categories.push({ id: card.id, title, tasks: [...tasks, ...cardOverdue] });
             });
             
             const dataStr = JSON.stringify(data);
-            localStorage.setItem('tasky_pro_v11', dataStr);
+            localStorage.setItem('tasky_pro_v12', dataStr); // Guardado local inmediato a prueba de scroll
 
-            updateCloudUI('syncing');
             clearTimeout(cloudSyncTimer);
-
             const uploadTask = () => {
                 fetch(`${API_URL}${JSONBIN_ID}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
-                    body: dataStr
-                }).then(res => {
-                    if(res.ok) updateCloudUI('online');
-                    else updateCloudUI('error');
-                }).catch(e => {
-                    console.error(e);
-                    updateCloudUI('error');
-                });
+                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY }, body: dataStr
+                }).then(res => { if(res.ok) updateCloudUI('online'); else updateCloudUI('error'); })
+                  .catch(e => updateCloudUI('error'));
             };
 
             if (instant) uploadTask();
-            else cloudSyncTimer = setTimeout(uploadTask, DEBOUNCE_DELAY);
-        }
-
-        // ==========================================
-        // UI & LOGICA DE TAREAS
-        // ==========================================
-        function toggleStats(btn) {
-            const panel = btn.closest('.activity-card').querySelector('.stats-panel');
-            panel.classList.toggle('open');
-            if(panel.classList.contains('open')) btn.style.color = 'var(--system-blue)';
-            else btn.style.color = 'var(--system-gray)';
+            else cloudSyncTimer = setTimeout(uploadTask, 2000);
         }
 
         function updateLogic() {
             const container = document.getElementById('activities-container');
             const emptyState = document.getElementById('empty-state');
-            const activeCards = container.querySelectorAll('.activity-card').length;
-            
-            if(activeCards === 0) emptyState.style.display = 'block';
+            if(container.querySelectorAll('.activity-card').length === 0) emptyState.style.display = 'block';
             else emptyState.style.display = 'none';
 
             document.querySelectorAll('.activity-card:not(.completed-card)').forEach(card => {
                 const tasks = card.querySelectorAll('.task-item:not(.completed)');
                 let pendingCount = 0;
-                tasks.forEach(task => {
-                    const input = task.querySelector('.task-input');
-                    if(input && input.value.trim() !== '') pendingCount++;
-                });
-
-                const cardId = card.id;
-                const completedCount = document.querySelectorAll(`.task-item.completed[data-origin-id="${cardId}"]`).length;
-                const total = pendingCount + completedCount;
-
+                tasks.forEach(t => { if(t.querySelector('.task-input').value.trim() !== '') pendingCount++; });
                 const progressText = card.querySelector('.progress-text');
                 const progressFill = card.querySelector('.progress-bar-fill');
-                if(progressText) progressText.innerText = `${completedCount}/${total}`;
-                let percent = total === 0 ? 0 : Math.round((completedCount / total) * 100);
-                if(progressFill) progressFill.style.width = `${percent}%`;
-
-                const statsPanel = card.querySelector('.stats-panel');
-                if (statsPanel) {
-                    statsPanel.querySelector('.stat-total').innerText = total;
-                    statsPanel.querySelector('.stat-completed').innerText = completedCount;
-                    statsPanel.querySelector('.stat-percent').innerText = `${percent}%`;
-                    
-                    let msg = "Añade tareas para iniciar.";
-                    if(percent === 100 && total > 0) msg = "¡Fase completada! Excelente ritmo. 🚀";
-                    else if (percent >= 50) msg = "¡Ya pasaste la mitad, sigue así! 🔥";
-                    else if (percent > 0) msg = "Buen inicio, mantén el enfoque. 🎯";
-                    else if (total > 0) msg = "¡Es hora de empezar con esta fase! 💪";
-                    statsPanel.querySelector('.stat-msg').innerText = msg;
-                }
+                if(progressText) progressText.innerText = `Pendientes: ${pendingCount}`;
+                if(progressFill) progressFill.style.width = pendingCount > 0 ? '50%' : '100%'; // Simplificado visualmente
             });
         }
 
@@ -488,90 +412,46 @@
             const container = document.getElementById('activities-container');
             const card = document.createElement('div');
             card.className = 'activity-card'; card.id = forceId || 'activity-' + activityCounter;
-            
             card.innerHTML = `
                 <div class="activity-header">
                     <div class="title-row">
-                        <div class="card-drag-handle" title="Mover Sección"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
-                        <input type="text" class="activity-title" value="${title}" placeholder="Fase o Bloque de tiempo...">
+                        <div class="card-drag-handle"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
+                        <input type="text" class="activity-title" value="${title}" placeholder="Fase o Bloque...">
                         <div class="header-actions">
-                            <button class="btn-icon" onclick="toggleStats(this)" title="Ver Análisis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></button>
-                            <button class="btn-icon btn-delete-card" onclick="this.closest('.activity-card').remove(); updateLogic(); saveDataLocalAndCloud();" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+                            <button class="btn-icon" onclick="this.closest('.activity-card').remove(); updateLogic(); saveDataLocalAndCloud(true);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="22" height="22" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
                         </div>
                     </div>
-                    
-                    <div class="progress-container">
-                        <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
-                        <span class="progress-text">0/0</span>
-                    </div>
-
-                    <div class="stats-panel">
-                        <div class="stats-grid">
-                            <div class="stat-box"><span class="stat-value stat-total">0</span><span class="stat-label">Total</span></div>
-                            <div class="stat-box"><span class="stat-value stat-completed">0</span><span class="stat-label">Listas</span></div>
-                            <div class="stat-box"><span class="stat-value stat-percent">0%</span><span class="stat-label">Avance</span></div>
-                        </div>
-                        <div class="stat-msg"></div>
-                    </div>
+                    <div class="progress-container"><div class="progress-bar-bg"><div class="progress-bar-fill"></div></div><span class="progress-text">0</span></div>
                 </div>
                 <div class="task-list"></div>
             `;
             container.appendChild(card);
             const taskList = card.querySelector('.task-list');
             
+            // Mobile Scroll Fix en Tareas
             new Sortable(taskList, {
-                group: 'shared-tasks', animation: 400, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-                handle: '.drag-handle', ghostClass: 'sortable-ghost-task', dragClass: 'sortable-drag',
-                multiDrag: true, multiDragKey: 'CTRL', selectedClass: 'selected-task', 
-                forceFallback: true, scroll: true, scrollSensitivity: 150, scrollSpeed: 30,
+                group: 'shared-tasks', animation: 250, handle: '.drag-handle',
+                delay: 150, delayOnTouchOnly: true, touchStartThreshold: 5, // FIX CELULAR
                 onEnd: function() { updateLogic(); saveDataLocalAndCloud(); }
             });
 
             if(createEmptyTask) createTaskElement(taskList, null, getTodayString());
             updateLogic(); saveDataLocalAndCloud();
-            if(title === '') setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
             return card;
         }
 
         function createTaskElement(listContainer, insertAfter = null, dateStr = null) {
             const task = document.createElement('div');
             task.className = 'task-item'; task.dataset.date = dateStr || getTodayString();
-
             task.innerHTML = `
-                <div class="drag-handle" title="Mover (Ctrl+Clic)"><svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="18" x2="16" y2="18"></line></svg></div>
-                <button class="btn-priority" onclick="togglePriority(this)" title="Marcar urgente">🚩</button>
+                <div class="drag-handle"><svg width="18" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="12" x2="16" y2="12"></line><line x1="8" y1="18" x2="16" y2="18"></line></svg></div>
+                <button class="btn-priority" onclick="togglePriority(this)">🚩</button>
                 <div class="btn-check" onclick="toggleComplete(this)"></div>
-                <textarea class="task-input" rows="1" placeholder="Añadir tarea..." onkeydown="handleKeyDown(event, this)" onpaste="handlePaste(event, this)"></textarea>
+                <textarea class="task-input" rows="1" placeholder="Añadir tarea..." onkeydown="handleKeyDown(event, this)"></textarea>
                 <button class="btn-icon btn-remove-task" tabindex="-1" onclick="this.parentElement.remove(); updateLogic(); saveDataLocalAndCloud();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
             `;
-            
-            if (insertAfter) insertAfter.after(task);
-            else listContainer.appendChild(task);
+            if (insertAfter) insertAfter.after(task); else listContainer.appendChild(task);
             return task.querySelector('.task-input');
-        }
-
-        function handlePaste(event, input) {
-            const text = (event.clipboardData || window.clipboardData).getData('text');
-            if (text.includes('\n')) {
-                event.preventDefault();
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
-                if (lines.length === 0) return;
-                input.value = lines[0]; autoResizeTextarea(input);
-                let currentItem = input.closest('.task-item');
-                const list = currentItem.parentElement;
-                
-                for (let i = 1; i < lines.length; i++) {
-                    setTimeout(() => {
-                        const newInput = createTaskElement(list, currentItem, getTodayString());
-                        newInput.value = lines[i]; autoResizeTextarea(newInput);
-                        currentItem = newInput.closest('.task-item');
-                        if (i === lines.length - 1) {
-                            currentItem.querySelector('.task-input').focus();
-                            updateLogic(); saveDataLocalAndCloud();
-                        }
-                    }, i * 30);
-                }
-            }
         }
 
         function toggleComplete(btn) {
@@ -581,95 +461,51 @@
             const container = document.getElementById('completed-container');
 
             taskItem.style.opacity = '0'; taskItem.style.transform = 'scale(0.9)';
-            
             setTimeout(() => {
                 if (!isCompleted) {
                     taskItem.classList.add('completed');
                     taskItem.dataset.originId = taskItem.closest('.activity-card').id; 
-                    taskItem.classList.remove('selected-task');
-                    globalList.appendChild(taskItem);
-                    container.style.display = 'block'; 
+                    globalList.appendChild(taskItem); container.style.display = 'block'; 
                 } else {
                     taskItem.classList.remove('completed');
-                    const originCard = document.getElementById(taskItem.dataset.originId);
+                    const originCard = document.getElementById(taskItem.dataset.originId) || document.querySelector('.activity-card:not(.completed-card)');
                     if (originCard) originCard.querySelector('.task-list').appendChild(taskItem);
-                    else {
-                        const first = document.querySelector('.activity-card:not(.completed-card)');
-                        if(first) first.querySelector('.task-list').appendChild(taskItem);
-                    }
                     if(globalList.children.length === 0) container.style.display = 'none';
                 }
-                
                 setTimeout(() => { taskItem.style.opacity = '1'; taskItem.style.transform = 'scale(1)'; }, 50);
-                updateLogic(); saveDataLocalAndCloud();
-            }, 300);
+                updateLogic(); saveDataLocalAndCloud(true); // Guardado inmediato al marcar
+            }, 250);
         }
 
         function handleKeyDown(e, input) {
             if (e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault();
-                if(input.closest('.task-item').classList.contains('completed')) return; 
-                const current = input.closest('.task-item');
-                const newInput = createTaskElement(current.parentElement, current, getTodayString());
-                newInput.focus();
+                e.preventDefault(); if(input.closest('.task-item').classList.contains('completed')) return; 
+                createTaskElement(input.closest('.task-item').parentElement, input.closest('.task-item'), getTodayString()).focus();
                 updateLogic(); saveDataLocalAndCloud();
             } else if (e.key === 'Escape') {
-                if (input.value.trim() === '') {
-                    const item = input.closest('.task-item');
-                    const list = item.parentElement;
-                    if (list.querySelectorAll('.task-item').length > 1) {
-                        item.style.opacity = '0'; item.style.transform = 'scale(0.9)';
-                        setTimeout(() => { item.remove(); updateLogic(); saveDataLocalAndCloud(); }, 200);
-                    } else input.blur();
-                } else input.blur();
+                if (input.value.trim() === '') input.closest('.task-item').remove();
+                input.blur(); updateLogic(); saveDataLocalAndCloud();
             }
-        }
-
-        function showToast(msg, isSuccess = true) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toastMsg').innerText = msg;
-            const icon = document.getElementById('toastIcon');
-            if(isSuccess) {
-                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>`;
-                icon.setAttribute('stroke', '#34C759');
-            } else {
-                icon.innerHTML = `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`;
-                icon.setAttribute('stroke', '#FF3B30');
-            }
-            toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
         function copyToWhatsApp() {
             let text = '';
             document.querySelectorAll('.activity-card:not(.completed-card)').forEach(card => {
                 const title = card.querySelector('.activity-title').value.trim();
-                const tasks = card.querySelectorAll('.task-item:not(.completed)');
-                const validTasks = Array.from(tasks).filter(t => t.querySelector('.task-input').value.trim() !== '');
-
+                const validTasks = Array.from(card.querySelectorAll('.task-item:not(.completed)')).filter(t => t.querySelector('.task-input').value.trim() !== '');
                 if (title !== '' && validTasks.length > 0) {
                     text += `*${title}*\n`;
-                    validTasks.forEach((task, index) => {
-                        let content = task.querySelector('.task-input').value.trim();
-                        if(task.classList.contains('is-critical')) content = `🚨 *${content}*`;
-                        text += `${index + 1}. ${content}\n`;
-                    });
+                    validTasks.forEach((task, i) => text += `${i + 1}. ${task.classList.contains('is-critical') ? '🚨 *'+task.querySelector('.task-input').value.trim()+'*' : task.querySelector('.task-input').value.trim()}\n`);
                     text += `\n`; 
                 }
             });
-
-            const completed = Array.from(document.querySelectorAll('.task-item.completed .task-input'))
-                                  .map(i => i.value.trim()).filter(v => v !== '');
-            if (completed.length > 0) {
-                text += `*✅ Completadas*\n`;
-                completed.forEach(t => text += `~${t}~\n`);
-                text += `\n`; 
-            }
-
-            if(text.trim() === '') return showToast("Escribe tareas primero", false);
-
-            navigator.clipboard.writeText(text.trim()).then(() => {
-                showToast("Copiado para WhatsApp", true);
-            }).catch(e => showToast("Error al copiar", false));
+            if(text.trim() === '') return alert("Escribe tareas primero.");
+            navigator.clipboard.writeText(text.trim());
+        }
+        
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
         }
     </script>
 </body>
